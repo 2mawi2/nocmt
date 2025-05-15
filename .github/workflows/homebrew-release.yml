@@ -16,9 +16,9 @@ permissions:
   contents: write
 
 jobs:
-  build-linux:
-    name: Build Linux Binaries
-    runs-on: ubuntu-latest
+  build:
+    name: Build Release Binaries
+    runs-on: macos-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
@@ -33,115 +33,37 @@ jobs:
         with:
           go-version: 'stable'
           cache: true
-      
-      - name: Install Zig
-        uses: goto-bus-stop/setup-zig@v2
-        with:
-          version: 0.11.0
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pkg-config gcc g++ make
 
       - name: Extract current version
         id: version
         run: |
           # Extract current version from the code
-          # Match the format in main.go: var Version = "dev"
-          CURRENT_VERSION=$(grep -oP 'var Version = "\K[^"]+' main.go || echo "0.0.1")
+          CURRENT_VERSION=$(grep -o 'var Version = "[^"]*"' main.go | cut -d'"' -f2)
           echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "tag=v$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $CURRENT_VERSION"
 
-      - name: Build Linux binaries
+      - name: Build binaries
         run: |
           mkdir -p artifacts
           VERSION=${{ steps.version.outputs.version }}
           
-          # Linux amd64
-          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CC="zig cc -target x86_64-linux" go build -v -o artifacts/nocmt-linux-amd64 -ldflags="-s -w -X main.Version=$VERSION" .
-          
-          # Linux arm64
-          CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC="zig cc -target aarch64-linux" go build -v -o artifacts/nocmt-linux-arm64 -ldflags="-s -w -X main.Version=$VERSION" .
-          
-          # Windows amd64
-          CGO_ENABLED=1 GOOS=windows GOARCH=amd64 CC="zig cc -target x86_64-windows" go build -v -o artifacts/nocmt-windows-amd64.exe -ldflags="-s -w -X main.Version=$VERSION" .
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: linux-artifacts
-          path: artifacts/
-          retention-days: 1
-
-  build-macos:
-    name: Build macOS Binaries
-    runs-on: macos-latest
-    needs: build-linux
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 'stable'
-          cache: true
-
-      - name: Build macOS binaries
-        run: |
-          mkdir -p artifacts
-          VERSION=${{ needs.build-linux.outputs.version }}
-          
-          # MacOS amd64 (native build on macOS runner)
+          # MacOS amd64
           CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -v -o artifacts/nocmt-darwin-amd64 -ldflags="-s -w -X main.Version=$VERSION" .
           
-          # MacOS arm64 (cross-compile on macOS runner)
+          # MacOS arm64
           CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -v -o artifacts/nocmt-darwin-arm64 -ldflags="-s -w -X main.Version=$VERSION" .
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: macos-artifacts
-          path: artifacts/
-          retention-days: 1
-
-  release:
-    name: Create Release
-    needs: [build-linux, build-macos]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download Linux artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: linux-artifacts
-          path: artifacts/
-
-      - name: Download macOS artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: macos-artifacts
-          path: artifacts/
           
-      - name: Generate checksums
-        run: |
+          # Create checksums
           cd artifacts
-          sha256sum * > checksums.txt
+          shasum -a 256 * > checksums.txt
           cd ..
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.build-linux.outputs.tag }}
-          name: Release ${{ needs.build-linux.outputs.tag }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.tag }}
           draft: false
           prerelease: false
           generate_release_notes: true
@@ -150,7 +72,7 @@ jobs:
             LICENSE
 
   update-homebrew:
-    needs: [build-linux, release]
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout homebrew tap repository
@@ -162,7 +84,7 @@ jobs:
           
       - name: Download release tarball and calculate SHA
         run: |
-          curl -L https://github.com/2mawi2/nocmt/archive/refs/tags/${{ needs.build-linux.outputs.tag }}.tar.gz -o nocmt.tar.gz
+          curl -L https://github.com/2mawi2/nocmt/archive/refs/tags/${{ needs.build.outputs.tag }}.tar.gz -o nocmt.tar.gz
           SHA256=$(sha256sum nocmt.tar.gz | awk '{print $1}')
           echo "SHA256=$SHA256" >> $GITHUB_ENV
           
@@ -172,7 +94,7 @@ jobs:
           class Nocmt < Formula
             desc "Tool for removing comments from source code while preserving structure"
             homepage "https://github.com/2mawi2/nocmt"
-            url "https://github.com/2mawi2/nocmt/archive/refs/tags/${{ needs.build-linux.outputs.tag }}.tar.gz"
+            url "https://github.com/2mawi2/nocmt/archive/refs/tags/${{ needs.build.outputs.tag }}.tar.gz"
             sha256 "${SHA256}"
             license "MIT"
           
@@ -180,7 +102,7 @@ jobs:
           
             def install
               ENV["CGO_ENABLED"] = "1"
-              system "go", "build", *std_go_args(ldflags: "-s -w -X main.Version=${{ needs.build-linux.outputs.version }}")
+              system "go", "build", *std_go_args(ldflags: "-s -w -X main.Version=${{ needs.build.outputs.version }}")
             end
           
             test do
@@ -195,11 +117,11 @@ jobs:
           git config user.name "GitHub Action"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add Formula/nocmt.rb
-          git commit -m "Update nocmt to ${{ needs.build-linux.outputs.version }}"
+          git commit -m "Update nocmt to ${{ needs.build.outputs.version }}"
           git push
 
   increment-version:
-    needs: [build-linux, update-homebrew]
+    needs: [build, update-homebrew]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/release' || github.event.inputs.force_release == 'true'
     steps:
@@ -216,7 +138,7 @@ jobs:
       - name: Increment Version
         run: |
           # Get current version from the output
-          CURRENT_VERSION=${{ needs.build-linux.outputs.version }}
+          CURRENT_VERSION=${{ needs.build.outputs.version }}
           
           # Parse the version
           IFS='.' read -ra VER_PARTS <<< "$CURRENT_VERSION"
