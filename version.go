@@ -1,3 +1,5 @@
+// Package main contains the version information for nocmt
 package main
 
-var Version = "1.0.3"
+// Version is the current version of nocmt
+var Version = "1.0.4"
