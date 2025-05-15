@@ -34,6 +34,11 @@ jobs:
           go-version: 'stable'
           cache: true
       
+      - name: Install Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.11.0
+
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -55,16 +60,19 @@ jobs:
           VERSION=${{ steps.version.outputs.version }}
           
           # Linux amd64
-          GOOS=linux GOARCH=amd64 go build -v -o artifacts/nocmt-linux-amd64 -ldflags="-s -w -X main.Version=$VERSION" .
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CC="zig cc -target x86_64-linux" go build -v -o artifacts/nocmt-linux-amd64 -ldflags="-s -w -X main.Version=$VERSION" .
+          
+          # Linux arm64
+          CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC="zig cc -target aarch64-linux" go build -v -o artifacts/nocmt-linux-arm64 -ldflags="-s -w -X main.Version=$VERSION" .
           
           # MacOS amd64
-          GOOS=darwin GOARCH=amd64 go build -v -o artifacts/nocmt-darwin-amd64 -ldflags="-s -w -X main.Version=$VERSION" .
+          CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 CC="zig cc -target x86_64-macos" go build -v -o artifacts/nocmt-darwin-amd64 -ldflags="-s -w -X main.Version=$VERSION" .
           
           # MacOS arm64
-          GOOS=darwin GOARCH=arm64 go build -v -o artifacts/nocmt-darwin-arm64 -ldflags="-s -w -X main.Version=$VERSION" .
+          CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 CC="zig cc -target aarch64-macos" go build -v -o artifacts/nocmt-darwin-arm64 -ldflags="-s -w -X main.Version=$VERSION" .
           
           # Windows amd64
-          GOOS=windows GOARCH=amd64 go build -v -o artifacts/nocmt-windows-amd64.exe -ldflags="-s -w -X main.Version=$VERSION" .
+          CGO_ENABLED=1 GOOS=windows GOARCH=amd64 CC="zig cc -target x86_64-windows" go build -v -o artifacts/nocmt-windows-amd64.exe -ldflags="-s -w -X main.Version=$VERSION" .
           
           # Create checksums
           cd artifacts
@@ -111,8 +119,18 @@ jobs:
             license "MIT"
           
             depends_on "go" => :build
+            depends_on "zig" => :build
           
             def install
+              ENV["CGO_ENABLED"] = "1"
+              
+              # Use Zig for cross-compilation
+              if Hardware::CPU.arm?
+                ENV["CC"] = "zig cc -target aarch64-macos"
+              else
+                ENV["CC"] = "zig cc -target x86_64-macos"
+              end
+              
               system "go", "build", *std_go_args(ldflags: "-s -w -X main.Version=${{ needs.build.outputs.version }}")
             end
           
