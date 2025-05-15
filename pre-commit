@@ -10,7 +10,7 @@
 #   - id: nocmt
 #     name: nocmt
 #     description: Remove comments from source code
-#     entry: nocmt --staged --preserve-directives
+#     entry: nocmt --staged
 #     language: golang
 #     files: \.(go|js|ts|java|py|cs|rs|kt|swift|sh|css)$
 
@@ -47,8 +47,8 @@ if [ -z "$PRE_COMMIT_FRAMEWORK" ]; then
     echo "Running nocmt to remove comments from staged files..." | tee -a "$LOG_FILE"
     
     # Use the --staged flag to process all staged files at once
-    echo "Running: $NOCMT_CMD --staged --preserve-directives" >> "$LOG_FILE"
-    $NOCMT_CMD --staged --preserve-directives 2>&1 | tee -a "$LOG_FILE"
+    echo "Running: $NOCMT_CMD --staged" >> "$LOG_FILE"
+    $NOCMT_CMD --staged 2>&1 | tee -a "$LOG_FILE"
     
     # Check if nocmt was successful
     if [ ${PIPESTATUS[0]} -ne 0 ]; then
@@ -60,7 +60,7 @@ if [ -z "$PRE_COMMIT_FRAMEWORK" ]; then
     echo "Log saved to $LOG_FILE"
 else
     # Running through pre-commit framework, let nocmt handle everything
-    nocmt --staged --preserve-directives
+    nocmt --staged
 fi
 
 # Exit with success status

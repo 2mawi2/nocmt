@@ -47,7 +47,7 @@ func InstallPreCommitHook(verbose bool) error {
 
 	hook := "#!/bin/sh\n\n"
 	hook += "# Run nocmt on staged files\n"
-	hook += execPath + " --staged --preserve-directives\n\n"
+	hook += execPath + " --staged\n\n"
 	hook += "exit 0\n"
 
 	err = os.WriteFile(hookPath, []byte(hook), 0755)
