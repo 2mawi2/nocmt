@@ -16,8 +16,6 @@ import (
 	"nocmt/walker"
 )
 
-var Version = "1.0.0"
-
 func main() {
 	var preserveDirectives bool
 	var removeDirectives bool

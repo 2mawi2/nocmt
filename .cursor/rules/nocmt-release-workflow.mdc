@@ -1,0 +1,70 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Release Workflow Documentation for `nocmt`
+
+## Overview
+The release process is automated via GitHub Actions workflow in `.github/workflows/homebrew-release.yml`.
+
+## Version Management
+- Version is stored in `version.go` as a separate file (e.g., `var Version = "1.0.1"`)
+- The workflow automatically increments the patch version after each release
+- Versions follow [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`)
+
+## Branch Strategy
+The project uses two main branches:
+- `main`: Development branch containing the latest code
+- `release`: Release branch used to trigger releases
+
+## Release Process Flow
+
+### 1. When to Make a Release
+When ready for a new release:
+```bash
+# Make sure you're on main and up to date
+git checkout main
+git pull
+
+# Checkout the release branch and merge main into it
+git checkout release
+git merge main
+
+# Push to trigger the release workflow
+git push origin release
+```
+
+### 2. Automated Release Steps (via GitHub Actions)
+1. The workflow runs when code is pushed to `release` branch
+2. Current version is extracted from `version.go`
+3. Release binaries are built for supported platforms
+4. A GitHub release is created with tag `v{version}` (e.g., `v1.0.1`)
+5. Homebrew formula is updated
+6. Version is incremented (e.g., `1.0.1` → `1.0.2`) on the `release` branch
+7. `release` branch is merged back into `main`
+
+### 3. Manual Steps for Major/Minor Versions
+For non-patch releases (major or minor version changes):
+
+```bash
+# Update version.go manually for major/minor changes
+# For example, to change from 1.0.2 to 1.1.0:
+cat > version.go << EOL
+// Package main contains the version information for nocmt
+package main
+
+// Version is the current version of nocmt
+var Version = "1.1.0"
+EOL
+
+git commit -m "Bump version to 1.1.0" version.go
+git push origin main
+```
+
+## Local Version Testing
+To test version-related logic locally:
+```bash
+# Run test script
+./test-version-update.sh
+```

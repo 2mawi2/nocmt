@@ -117,8 +117,13 @@ jobs:
           git config user.name "GitHub Action"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add Formula/nocmt.rb
-          git commit -m "Update nocmt to ${{ needs.build.outputs.version }}"
-          git push
+          # Only commit and push if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to Homebrew formula, already up-to-date."
+          else
+            git commit -m "Update nocmt to ${{ needs.build.outputs.version }}"
+            git push
+          fi
 
   increment-version:
     needs: [build, update-homebrew]
@@ -153,12 +158,12 @@ jobs:
           
           # Create a new version.go file with updated version
           cat > version.go << EOL
-// Package main contains the version information for nocmt
-package main
+          // Package main contains the version information for nocmt
+          package main
 
-// Version is the current version of nocmt
-var Version = "${NEW_VERSION}"
-EOL
+          // Version is the current version of nocmt
+          var Version = "${NEW_VERSION}"
+          EOL
           
           # Stage and commit the updated file on release branch
           git add version.go
