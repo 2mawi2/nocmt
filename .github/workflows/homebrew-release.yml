@@ -153,12 +153,12 @@ jobs:
           
           # Create a new version.go file with updated version
           cat > version.go << EOL
-// Package main contains the version information for nocmt
-package main
+          // Package main contains the version information for nocmt
+          package main
 
-// Version is the current version of nocmt
-var Version = "${NEW_VERSION}"
-EOL
+          // Version is the current version of nocmt
+          var Version = "${NEW_VERSION}"
+          EOL
           
           # Stage and commit the updated file on release branch
           git add version.go
