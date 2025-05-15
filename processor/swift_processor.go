@@ -47,8 +47,15 @@ func (p *SwiftProcessor) StripComments(source string) (string, error) {
 
 	lines := strings.Split(source, "\n")
 	resultLines := make([]string, 0, len(lines))
+	emptyLineMap := make(map[int]bool)
 
-	for _, line := range lines {
+	for i, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			emptyLineMap[i] = true
+		}
+	}
+
+	for i, line := range lines {
 		if p.preserveDirectives && (strings.HasPrefix(strings.TrimSpace(line), "@") ||
 			strings.HasPrefix(strings.TrimSpace(line), "#")) {
 			resultLines = append(resultLines, line)
@@ -56,55 +63,55 @@ func (p *SwiftProcessor) StripComments(source string) (string, error) {
 		}
 
 		lineResult := ""
-		i := 0
-		for i < len(line) {
-			if i+1 < len(line) {
-				curChar := line[i]
-				nextChar := line[i+1]
+		j := 0
+		for j < len(line) {
+			if j+1 < len(line) {
+				curChar := line[j]
+				nextChar := line[j+1]
 
 				if !inString && !inMultiLineString && inMultiLineComment == 0 && curChar == '/' && nextChar == '/' {
 					inSingleLineComment = true
-					i += 2
+					j += 2
 					continue
 				}
 
 				if !inString && !inMultiLineString && !inSingleLineComment && curChar == '/' && nextChar == '*' {
 					inMultiLineComment++
-					i += 2
+					j += 2
 					continue
 				}
 
 				if !inString && !inMultiLineString && !inSingleLineComment && inMultiLineComment > 0 && curChar == '*' && nextChar == '/' {
 					inMultiLineComment--
-					i += 2
+					j += 2
 					continue
 				}
 
 				if !inSingleLineComment && inMultiLineComment == 0 && !inMultiLineString && curChar == '"' && prevChar != '\\' {
 					inString = !inString
 					lineResult += string(curChar)
-					i++
+					j++
 					prevChar = rune(curChar)
 					continue
 				}
 
-				if !inSingleLineComment && inMultiLineComment == 0 && !inString && i+2 < len(line) &&
-					curChar == '"' && nextChar == '"' && line[i+2] == '"' && prevChar != '\\' {
+				if !inSingleLineComment && inMultiLineComment == 0 && !inString && j+2 < len(line) &&
+					curChar == '"' && nextChar == '"' && line[j+2] == '"' && prevChar != '\\' {
 					inMultiLineString = !inMultiLineString
-					lineResult += string(curChar) + string(nextChar) + string(line[i+2])
-					i += 3
+					lineResult += string(curChar) + string(nextChar) + string(line[j+2])
+					j += 3
 					prevChar = rune(curChar)
 					continue
 				}
 			}
 
-			curChar := line[i]
+			curChar := line[j]
 			if !inSingleLineComment && inMultiLineComment == 0 {
 				lineResult += string(curChar)
 			}
 
 			prevChar = rune(curChar)
-			i++
+			j++
 		}
 
 		inSingleLineComment = false
@@ -113,6 +120,8 @@ func (p *SwiftProcessor) StripComments(source string) (string, error) {
 			resultLines = append(resultLines, lineResult)
 		} else if inMultiLineString {
 			resultLines = append(resultLines, lineResult)
+		} else if emptyLineMap[i] {
+			resultLines = append(resultLines, "")
 		}
 	}
 

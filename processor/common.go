@@ -219,8 +219,8 @@ func removeComments(source string, ranges []CommentRange) string {
 
 		if commentOnlyLines[i] && trimmedLine == "" {
 			shouldKeepLine = false
-		} else if trimmedLine == "" {
-			shouldKeepLine = i > 0 && i < len(lines)-1
+		} else {
+			shouldKeepLine = true
 		}
 
 		if shouldKeepLine {
