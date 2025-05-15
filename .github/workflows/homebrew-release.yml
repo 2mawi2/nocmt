@@ -117,8 +117,13 @@ jobs:
           git config user.name "GitHub Action"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add Formula/nocmt.rb
-          git commit -m "Update nocmt to ${{ needs.build.outputs.version }}"
-          git push
+          # Only commit and push if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to Homebrew formula, already up-to-date."
+          else
+            git commit -m "Update nocmt to ${{ needs.build.outputs.version }}"
+            git push
+          fi
 
   increment-version:
     needs: [build, update-homebrew]
