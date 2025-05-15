@@ -3,7 +3,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Report Card](https://goreportcard.com/badge/github.com/2mawi2/nocmt)](https://goreportcard.com/report/github.com/2mawi2/nocmt)
 [![Test Coverage](https://img.shields.io/badge/coverage-65%25-yellowgreen)](https://github.com/2mawi2/nocmt/actions)
-[![Benchmarks](https://img.shields.io/badge/benchmarks-view%20results-blue)](https://github.com/2mawi2/nocmt/blob/main/benchmarks/latest.txt)
 
 > **Clean code speaks for itself. Let it.**
 
