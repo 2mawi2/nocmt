@@ -148,6 +148,22 @@ func main() {
 
 	preserveDirectives = !removeDirectives
 
+	if all {
+		currentDir, err := os.Getwd()
+		if err != nil {
+			fmt.Printf("Error getting current directory: %v\n", err)
+			os.Exit(1)
+		}
+
+		if !walker.ValidateGitRepository(currentDir, force) {
+			fmt.Println("Aborted: User chose not to proceed with non-git repository.")
+			os.Exit(1)
+		}
+
+		processDirectory(currentDir, preserveDirectives, dryRun, verbose, force, commentConfig)
+		return
+	}
+
 	if inputPath == "" {
 		staged = true
 	}
