@@ -16,7 +16,7 @@ import (
 	"nocmt/walker"
 )
 
-var Version = "dev"
+var Version = "0.1.0"
 
 func main() {
 	var inputPath string
