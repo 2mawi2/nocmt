@@ -38,12 +38,10 @@ func (p *BashProcessor) StripComments(source string) (string, error) {
 	endsWithNewline := strings.HasSuffix(source, "\n")
 
 	var directiveLines []int
-	var directiveTexts []string
 	if p.preserveDirectives {
 		for i, line := range lines {
 			if p.isBashDirective(line) {
 				directiveLines = append(directiveLines, i)
-				directiveTexts = append(directiveTexts, line)
 			}
 		}
 	}

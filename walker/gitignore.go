@@ -73,7 +73,6 @@ var DefaultIgnorePatterns = []string{
 	"*.backup",
 	"*_backup",
 	"*.old",
-	".code-stabil/",
 }
 
 var CommonDirectories = []string{
@@ -424,7 +423,7 @@ func (h *HierarchicalGitIgnoreChecker) findUnignoreMatches(relPath string, appli
 			})
 
 			if dirLevel == applicableDirs[0] {
-				return unignoreMatches 
+				return unignoreMatches
 			}
 		}
 	}
@@ -460,10 +459,7 @@ func (h *HierarchicalGitIgnoreChecker) hasIgnorePattern(relPath string, applicab
 		matches, pattern := ignorer.MatchesPathHow(dirRelPath)
 
 		if matches && pattern != nil && !pattern.Negate {
-			if h.isOverriddenByMoreSpecificUnignore(dirLevel, unignoreMatches) {
-				return false
-			}
-			return true
+			return !h.isOverriddenByMoreSpecificUnignore(dirLevel, unignoreMatches)
 		}
 	}
 

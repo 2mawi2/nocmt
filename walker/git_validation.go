@@ -27,12 +27,14 @@ func confirmNonGitUsage(input string) bool {
 		scanner := bufio.NewScanner(strings.NewReader(input))
 		for scanner.Scan() {
 			response := strings.ToLower(strings.TrimSpace(scanner.Text()))
-			if response == "y" || response == "yes" {
+			switch response {
+			case "y", "yes":
 				return true
-			} else if response == "n" || response == "no" {
+			case "n", "no":
 				return false
+			default:
+				fmt.Println("Please enter 'y' or 'n':")
 			}
-			fmt.Println("Please enter 'y' or 'n':")
 		}
 		return false
 	}
@@ -45,12 +47,14 @@ func confirmNonGitUsage(input string) bool {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		response := strings.ToLower(strings.TrimSpace(scanner.Text()))
-		if response == "y" || response == "yes" {
+		switch response {
+		case "y", "yes":
 			return true
-		} else if response == "n" || response == "no" {
+		case "n", "no":
 			return false
+		default:
+			fmt.Println("Please enter 'y' or 'n':")
 		}
-		fmt.Println("Please enter 'y' or 'n':")
 	}
 
 	return false

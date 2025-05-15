@@ -101,7 +101,7 @@ func removeComments(source string, ranges []CommentRange) string {
 		return source
 	}
 
-	for i := 0; i < len(ranges); i++ {
+	for i := range ranges {
 		for j := i + 1; j < len(ranges); j++ {
 			if ranges[i].StartByte < ranges[j].StartByte {
 				ranges[i], ranges[j] = ranges[j], ranges[i]
@@ -157,7 +157,8 @@ func removeComments(source string, ranges []CommentRange) string {
 						commentEnd = len(lineContent)
 					}
 
-					if line == startLine {
+					switch line {
+					case startLine:
 						beforeComment := strings.TrimSpace(lineContent[:commentStart])
 						if beforeComment == "" && line == endLine {
 							afterComment := ""
@@ -170,7 +171,7 @@ func removeComments(source string, ranges []CommentRange) string {
 						} else if beforeComment == "" && line != endLine {
 							commentOnlyLines[line] = true
 						}
-					} else if line == endLine {
+					case endLine:
 						afterComment := ""
 						if commentEnd < len(lineContent) {
 							afterComment = strings.TrimSpace(lineContent[commentEnd:])
@@ -178,7 +179,7 @@ func removeComments(source string, ranges []CommentRange) string {
 						if afterComment == "" {
 							commentOnlyLines[line] = true
 						}
-					} else {
+					default:
 						commentOnlyLines[line] = true
 					}
 				} else {
@@ -270,33 +271,4 @@ func (b *BaseProcessor) stripCommentsWithFiltering(source string, parser *sitter
 	commentRanges = b.filterCommentRanges(commentRanges)
 
 	return removeComments(source, commentRanges), nil
-}
-
-func (b *BaseProcessor) stripCommentsPreserveDirectivesWithFiltering(source string, matcher DirectiveMatcher, parser *sitter.Parser) (string, error) {
-	lines := strings.Split(source, "\n")
-	directiveLines := make(map[int]string)
-
-	for i, line := range lines {
-		if matcher(line) {
-			directiveLines[i] = line
-		}
-	}
-
-	commentRanges, err := parseCode(parser, source)
-	if err != nil {
-		return "", err
-	}
-
-	commentRanges = b.filterCommentRanges(commentRanges)
-
-	stripped := removeComments(source, commentRanges)
-
-	strippedLines := strings.Split(stripped, "\n")
-	for i, directive := range directiveLines {
-		if i < len(strippedLines) {
-			strippedLines[i] = directive
-		}
-	}
-
-	return strings.Join(strippedLines, "\n"), nil
 }

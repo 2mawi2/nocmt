@@ -7,6 +7,9 @@ build:
 test:
     go test ./...
 
+lint:
+    golangci-lint run ./...
+
 run *args:
     go run main.go {{args}}
 

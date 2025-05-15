@@ -3,8 +3,6 @@ package processor
 import (
 	"nocmt/config"
 	"testing"
-
-	sitter "github.com/smacker/go-tree-sitter"
 )
 
 type mockProcessor struct {
@@ -39,8 +37,6 @@ func newMockProcessor(languageName string, preserveDirectives bool) *mockProcess
 		},
 	}
 }
-
-var mockLanguage *sitter.Language
 
 func TestFindCommentLineNumbers(t *testing.T) {
 	content := `package main

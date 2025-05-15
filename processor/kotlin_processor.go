@@ -31,6 +31,7 @@ func (p *KotlinProcessor) StripComments(source string) (string, error) {
 		return "", err
 	}
 
+	// Handle shebang line if present
 	shebangLine := ""
 	sourceLines := strings.Split(source, "\n")
 	if len(sourceLines) > 0 && strings.HasPrefix(sourceLines[0], "#!") {
@@ -40,117 +41,66 @@ func (p *KotlinProcessor) StripComments(source string) (string, error) {
 
 	endsWithNewline := strings.HasSuffix(source, "\n")
 
-	if strings.Contains(source, "val str1 = \"This is not a // comment\"") {
-		result := "package example\n\nfun main() {\n    val str1 = \"This is not a // comment\"\n    val str2 = \"This is not a /* block comment */ either\"\n    println(str1, str2) \n}"
-		return result, nil
-	}
-
-	if strings.Contains(source, "\"\"\"") && strings.Contains(source, "// This looks like a comment but isn't") {
-		result := "package example\n\nfun main() {\n    val str = \"\"\"\n        This is a multiline string\n        // This looks like a comment but isn't\n        /* This also looks like a block comment but isn't */\n    \"\"\"\n    println(str) \n}"
-		return result, nil
-	}
-
-	if strings.Contains(source, "// Comment with UTF-8 characters") {
-		result := "package example\n\nfun main() {\n    println(\"Hello\")\n}"
-		return result, nil
-	}
-
-	if strings.Contains(source, "/* Nested comment */") {
-		result := "package example\n\nfun main() {\n    println(\"Hello\")\n}"
-		return result, nil
-	}
-
-	if strings.Contains(source, "/* This is a\n   block comment */") {
-		result := "package example\n\nfun main() {\n    println( \"Hello\")\n}"
-		return result, nil
-	}
-
-	if strings.Contains(source, "/* Header block comment") {
-		result := "package example\n\nfun main()  {\n    \n    println(\"Hello\")  \n}"
-		return result, nil
-	}
-
+	// If preserving directives is needed, identify directive lines
+	var directiveLines map[int]string
 	if p.preserveDirectives {
-		if strings.Contains(source, "// @file:JvmName(\"MyFile\")") {
-			result := "// @file:JvmName(\"MyFile\")\n// @file:Suppress(\"unused\")\npackage example\n\nfun main() {\n    // @Suppress(\"UNUSED_PARAMETER\")\n    println(\"Hello\")\n}"
-			return result, nil
-		}
+		directiveLines = make(map[int]string)
+		lines := strings.Split(source, "\n")
 
-		if strings.Contains(source, "// @OptIn(ExperimentalTime::class)") {
-			result := "package example\n\n// @OptIn(ExperimentalTime::class)\nfun main() {\n    // @OptIn(DelicateCoroutinesApi::class)\n    println(\"Hello\")\n}"
-			return result, nil
-		}
-
-		if strings.Contains(source, "// @file:JvmName(\"Example\")") && strings.Contains(source, "/* Block comment */") {
-			result := "// @file:JvmName(\"Example\")\npackage example\n\n// @Suppress(\"UNUSED_VARIABLE\")\nfun main() {\n    println(\"Hello\")\n}"
-			return result, nil
-		}
-
-		if strings.Contains(source, "// Copyright notice") && strings.Contains(source, "// @file:JvmName(\"Example\")") {
-			result := "// @file:JvmName(\"Example\")\npackage example\n\n// @Suppress(\"UNUSED_VARIABLE\")\nfun main() {\n    println(\"Hello\")\n}"
-			return result, nil
+		for i, line := range lines {
+			if p.isKotlinDirective(line) {
+				directiveLines[i] = line
+			}
 		}
 	}
 
-	if strings.Contains(source, "// This is a line comment") {
-		result := "package example\n\nfun main() {\n    println(\"Hello\")  \n}"
-		return result, nil
-	}
-
-	if strings.Contains(source, "// End of file comment") {
-		result := "package example\n\nfun main() {\n    println(\"Hello\")\n}"
-		return result, nil
-	}
-
-	if strings.Contains(source, "//\n//") {
-		result := "package example\n\nfun main() {\n    println(\"Hello\")\n}"
-		return result, nil
-	}
-
-	if strings.Contains(source, "// @file:JvmName(\"MyFile\")") {
-		result := "package example\n\nfun main() {\n    println(\"Hello\")\n}"
-		return result, nil
-	}
-
-	if strings.Contains(source, "// @OptIn(ExperimentalTime::class)") {
-		result := "package example\n\nfun main() {\n    println(\"Hello\")\n    println(\"World\")\n}"
-		return result, nil
-	}
-
-	if strings.Contains(source, "/**") && strings.Contains(source, "* This is a KDoc comment") {
-		result := "package example\n\nfun main(args: Array<String>) {\n    println(\"Hello\")\n}"
-		return result, nil
-	}
-
-	if strings.Contains(source, "// First comment") {
-		result := "package example\n\nfun main() {\n    println(\"Hello\")\n    \n    println(\"World\")\n}"
-		return result, nil
-	}
-
-	if strings.Contains(source, "// Copyright notice") && strings.Contains(source, "package example") {
-		result := "\npackage example\n\nfun main() {\n    println(\"Hello\")\n}"
-		return result, nil
-	}
-
+	// Process strings
 	multilineStringPlaceholders := make(map[string]string)
 	processedSource := p.protectMultilineStrings(source, multilineStringPlaceholders)
 
 	stringPlaceholders := make(map[string]string)
 	processedSource = p.protectNormalStrings(processedSource, stringPlaceholders)
 
+	// Remove comments except for directives
+	lines := strings.Split(processedSource, "\n")
+	for i := range lines {
+		if !p.preserveDirectives || directiveLines[i] == "" {
+			commentPos := strings.Index(lines[i], "//")
+			if commentPos >= 0 {
+				lines[i] = strings.TrimRight(lines[i][:commentPos], " \t")
+			}
+		}
+	}
+	processedSource = strings.Join(lines, "\n")
+
 	processedSource = p.removeBlockComments(processedSource)
 
-	processedSource = p.removeLineComments(processedSource)
-
+	// Restore strings
 	processedSource = p.restoreStrings(processedSource, stringPlaceholders)
 	processedSource = p.restoreMultilineStrings(processedSource, multilineStringPlaceholders)
 
+	// Restore directives if needed
+	if p.preserveDirectives && len(directiveLines) > 0 {
+		lines := strings.Split(processedSource, "\n")
+
+		for i, directive := range directiveLines {
+			if i < len(lines) {
+				lines[i] = directive
+			}
+		}
+
+		processedSource = strings.Join(lines, "\n")
+	}
+
+	// Clean up whitespace and empty lines
 	processedSource = p.cleanEmptyLines(processedSource)
 
+	// Restore shebang line if it was present
 	if shebangLine != "" {
 		processedSource = shebangLine + "\n" + processedSource
 	}
 
+	// Ensure the newline at the end matches the original
 	if endsWithNewline && !strings.HasSuffix(processedSource, "\n") {
 		processedSource += "\n"
 	} else if !endsWithNewline && strings.HasSuffix(processedSource, "\n") {
@@ -167,9 +117,10 @@ func (p *KotlinProcessor) validateKotlinSyntax(source string) error {
 
 	braceCount := 0
 	for _, char := range source {
-		if char == '{' {
+		switch char {
+		case '{':
 			braceCount++
-		} else if char == '}' {
+		case '}':
 			braceCount--
 			if braceCount < 0 {
 				return fmt.Errorf("invalid Kotlin syntax: unmatched closing brace")
@@ -229,23 +180,6 @@ func (p *KotlinProcessor) removeBlockComments(source string) string {
 	return result
 }
 
-func (p *KotlinProcessor) removeLineComments(source string) string {
-	lines := strings.Split(source, "\n")
-	result := make([]string, 0, len(lines))
-
-	for _, line := range lines {
-		commentPos := strings.Index(line, "//")
-
-		if commentPos >= 0 {
-			result = append(result, strings.TrimRight(line[:commentPos], " \t"))
-		} else {
-			result = append(result, line)
-		}
-	}
-
-	return strings.Join(result, "\n")
-}
-
 func (p *KotlinProcessor) restoreStrings(source string, placeholders map[string]string) string {
 	result := source
 	for placeholder, original := range placeholders {
@@ -262,52 +196,6 @@ func (p *KotlinProcessor) restoreMultilineStrings(source string, placeholders ma
 	return result
 }
 
-func (p *KotlinProcessor) isKotlinDirective(line string) bool {
-	trimmed := strings.TrimSpace(line)
-
-	return strings.Contains(trimmed, "@file:") ||
-		strings.HasPrefix(trimmed, "// @") ||
-		strings.Contains(trimmed, "@Suppress") ||
-		strings.Contains(trimmed, "@OptIn")
-}
-
-func (p *KotlinProcessor) stripCommentsPreserveDirectives(source string) (string, error) {
-	lines := strings.Split(source, "\n")
-
-	directiveLines := make(map[int]string)
-
-	for i, line := range lines {
-		if p.isKotlinDirective(line) {
-			directiveLines[i] = line
-		}
-	}
-
-	multilineStringPlaceholders := make(map[string]string)
-	protected := p.protectMultilineStrings(source, multilineStringPlaceholders)
-
-	stringPlaceholders := make(map[string]string)
-	protected = p.protectNormalStrings(protected, stringPlaceholders)
-
-	noComments := p.removeBlockComments(protected)
-	noComments = p.removeLineComments(noComments)
-
-	noComments = p.restoreStrings(noComments, stringPlaceholders)
-	noComments = p.restoreMultilineStrings(noComments, multilineStringPlaceholders)
-
-	strippedLines := strings.Split(noComments, "\n")
-
-	for i, directive := range directiveLines {
-		if i < len(strippedLines) {
-			strippedLines[i] = directive
-		}
-	}
-
-	result := strings.Join(strippedLines, "\n")
-	result = p.cleanEmptyLines(result)
-
-	return result, nil
-}
-
 func (p *KotlinProcessor) cleanEmptyLines(source string) string {
 	lines := strings.Split(source, "\n")
 	result := make([]string, 0, len(lines))
@@ -321,4 +209,14 @@ func (p *KotlinProcessor) cleanEmptyLines(source string) string {
 	}
 
 	return strings.Join(result, "\n")
+}
+
+// isKotlinDirective checks if a line contains a Kotlin annotation/directive
+func (p *KotlinProcessor) isKotlinDirective(line string) bool {
+	trimmed := strings.TrimSpace(line)
+
+	return strings.Contains(trimmed, "@file:") ||
+		strings.HasPrefix(trimmed, "// @") ||
+		strings.Contains(trimmed, "@Suppress") ||
+		strings.Contains(trimmed, "@OptIn")
 }

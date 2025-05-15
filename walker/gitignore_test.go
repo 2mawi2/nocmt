@@ -12,7 +12,11 @@ func TestGitIgnoreCheckerBasic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp directory: %v", err)
+		}
+	}()
 
 	gitignoreContent := []byte("*.log\n/node_modules/\n!important.log\n")
 	err = os.WriteFile(filepath.Join(tempDir, ".gitignore"), gitignoreContent, 0644)
@@ -51,11 +55,11 @@ func TestGitIgnoreCheckerBasic(t *testing.T) {
 		path     string
 		expected bool
 	}{
-		{"file.txt", false},              
-		{"file.log", true},               
-		{"important.log", false},         
-		{"node_modules/module.js", true}, 
-		{"subfolder/file.log", true},     
+		{"file.txt", false},
+		{"file.log", true},
+		{"important.log", false},
+		{"node_modules/module.js", true},
+		{"subfolder/file.log", true},
 	}
 
 	for _, tc := range testCases {
@@ -72,7 +76,11 @@ func TestHierarchicalGitIgnoreChecker(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp directory: %v", err)
+		}
+	}()
 
 	rootGitignore := []byte("*.log\n!important.log\n")
 	err = os.WriteFile(filepath.Join(tempDir, ".gitignore"), rootGitignore, 0644)
@@ -178,7 +186,7 @@ func TestHierarchicalGitIgnoreChecker(t *testing.T) {
 
 	subFolderIgnorer := checker.gitignoreFiles["subfolder"]
 	if subFolderIgnorer != nil {
-		relToSubfolder := "file.log" 
+		relToSubfolder := "file.log"
 		subFolderMatches, subFolderPattern := subFolderIgnorer.MatchesPathHow(relToSubfolder)
 		if subFolderMatches && subFolderPattern != nil {
 			t.Logf("  - Matches subfolder pattern: \"%s\" (negate: %v)",
@@ -208,11 +216,11 @@ func TestHierarchicalGitIgnoreChecker(t *testing.T) {
 		path     string
 		expected bool
 	}{
-		{"file.txt", false},           
-		{"file.log", true},            
-		{"important.log", false},      
-		{"subfolder/file.log", false}, 
-		{"subfolder/file.txt", true},  
+		{"file.txt", false},
+		{"file.log", true},
+		{"important.log", false},
+		{"subfolder/file.log", false},
+		{"subfolder/file.txt", true},
 	}
 
 	for _, tc := range testCases {
@@ -232,7 +240,11 @@ func TestDefaultIgnorePatternsBehavior(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp directory: %v", err)
+		}
+	}()
 
 	filesToIgnore := []string{
 		"node_modules/module.js",
@@ -315,7 +327,7 @@ func TestDefaultIgnorePatternsBehavior(t *testing.T) {
 
 	for _, file := range filesToProcess {
 		if file == "README.md" {
-			continue 
+			continue
 		}
 		fullPath := filepath.Join(tempDir, file)
 		isIgnored := checker.IsIgnored(fullPath)

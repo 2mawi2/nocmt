@@ -31,10 +31,59 @@ func (p *GoProcessor) StripComments(source string) (string, error) {
 	parser.SetLanguage(golang.GetLanguage())
 
 	if p.preserveDirectives {
-		return p.stripCommentsPreserveDirectivesWithFiltering(source, p.isGoDirective, parser)
+		return p.stripCommentsPreserveDirectives(source, parser)
 	}
 
 	return p.stripCommentsWithFiltering(source, parser)
+}
+
+func (p *GoProcessor) stripCommentsPreserveDirectives(source string, parser *sitter.Parser) (string, error) {
+	lines := strings.Split(source, "\n")
+	directiveLines := make(map[int]bool)
+
+	// Mark lines containing directives
+	for i, line := range lines {
+		if p.isGoDirective(line) {
+			directiveLines[i] = true
+		}
+	}
+
+	commentRanges, err := parseCode(parser, source)
+	if err != nil {
+		return "", err
+	}
+
+	filteredRanges := make([]CommentRange, 0)
+
+	// Keep only comments that don't contain directives
+	for _, r := range commentRanges {
+		startLine, endLine := FindCommentLineNumbers(source, r)
+
+		shouldPreserve := false
+		for line := startLine; line <= endLine; line++ {
+			if directiveLines[line-1] {
+				shouldPreserve = true
+				break
+			}
+		}
+
+		if !shouldPreserve {
+			filteredRanges = append(filteredRanges, r)
+		}
+	}
+
+	// Filter comments based on ignore patterns
+	if p.commentConfig != nil {
+		var ignoreFilteredRanges []CommentRange
+		for _, r := range filteredRanges {
+			if !p.ShouldIgnoreComment(r.Content) {
+				ignoreFilteredRanges = append(ignoreFilteredRanges, r)
+			}
+		}
+		filteredRanges = ignoreFilteredRanges
+	}
+
+	return removeComments(source, filteredRanges), nil
 }
 
 func (p *GoProcessor) isGoDirective(line string) bool {

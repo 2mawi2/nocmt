@@ -90,15 +90,26 @@ func TestConfigLoadSave(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get current directory: %v", err)
 	}
-	defer os.Chdir(oldWd)
+	defer func() {
+		if err := os.Chdir(oldWd); err != nil {
+			t.Logf("Failed to restore working directory: %v", err)
+		}
+	}()
 
 	if err := os.Chdir(projectDir); err != nil {
 		t.Fatalf("Failed to change to project directory: %v", err)
 	}
 
 	oldHome := os.Getenv("HOME")
-	defer os.Setenv("HOME", oldHome)
-	os.Setenv("HOME", homeDir)
+	defer func() {
+		if err := os.Setenv("HOME", oldHome); err != nil {
+			t.Logf("Failed to restore HOME environment variable: %v", err)
+		}
+	}()
+
+	if err := os.Setenv("HOME", homeDir); err != nil {
+		t.Fatalf("Failed to set HOME environment variable: %v", err)
+	}
 
 	cfg := New()
 	if err := cfg.LoadConfigurations(); err != nil {

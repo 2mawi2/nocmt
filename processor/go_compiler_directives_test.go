@@ -34,115 +34,84 @@ func main() {
 }`,
 		},
 		{
-			name: "go generate directives",
+			name: "go generate directive",
 			input: `package main
 
-//go:generate go run gen.go
-//go:generate protoc --go_out=. *.proto
-// Normal comment
+//go:generate protoc --go_out=. --go_opt=paths=source_relative protocol/test.proto
+
 func main() {
-	fmt.Println("Hello")
+	// This is a regular comment
 }`,
 			expected: `package main
 
-//go:generate go run gen.go
-//go:generate protoc --go_out=. *.proto
+//go:generate protoc --go_out=. --go_opt=paths=source_relative protocol/test.proto
 
 func main() {
-	fmt.Println("Hello")
 }`,
 		},
 		{
-			name: "cgo directives",
+			name: "cgo directive",
 			input: `package main
 
-import "C"
-
-// Regular comment
 // #include <stdio.h>
 // #include <stdlib.h>
-//
-// void myFunction(void) {
-//    printf("Hello from C!\n");
-// }
-import "fmt"
+import "C"
 
 func main() {
-	fmt.Println("Hello from Go!")
+	// Print something
+	C.puts(C.CString("Hello, world"))
 }`,
 			expected: `package main
 
-import "C"
-
 // #include <stdio.h>
 // #include <stdlib.h>
-//
-// void myFunction(void) {
-//    printf("Hello from C!\n");
-// }
-import "fmt"
+import "C"
 
 func main() {
-	fmt.Println("Hello from Go!")
+	C.puts(C.CString("Hello, world"))
 }`,
 		},
 		{
-			name: "other compiler directives",
-			input: `package main
+			name: "go build tags",
+			input: `//go:build linux && !windows
+// +build linux,!windows
 
-//go:noinline
-//go:nosplit
-func performant() {
+package main
+
+func main() {
 	// Comment
-}
+}`,
+			expected: `//go:build linux && !windows
+// +build linux,!windows
 
-//go:linkname time_now time.now
-func time_now() int64
+package main
 
-//go:embed static/index.html
-var indexHTML string
-
-func main() {}`,
-			expected: `package main
-
-//go:noinline
-//go:nosplit
-func performant() {
-}
-
-//go:linkname time_now time.now
-func time_now() int64
-
-//go:embed static/index.html
-var indexHTML string
-
-func main() {}`,
+func main() {
+}`,
 		},
 		{
-			name: "build tags modern syntax",
-			input: `//go:build linux && (amd64 || arm64)
-// +build linux,amd64 linux,arm64
+			name: "mixed directives and comments",
+			input: `package main
 
-package main
-
-func main() {
-	// Function body
+//go:generate echo "Hello"
+// This is a regular comment
+//go:noinline
+func example() {
+	// Another comment
 }`,
-			expected: `//go:build linux && (amd64 || arm64)
-// +build linux,amd64 linux,arm64
+			expected: `package main
 
-package main
-
-func main() {
+//go:generate echo "Hello"
+//go:noinline
+func example() {
 }`,
 		},
 	}
 
-	t.Skip("Skipping compiler directive tests - feature not implemented yet")
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := StripComments(tt.input)
+			processor := NewGoProcessor(true)
+			result, err := processor.StripComments(tt.input)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, result)
 		})

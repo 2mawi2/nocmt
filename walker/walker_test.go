@@ -12,7 +12,11 @@ func TestGitignoreParsing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp directory: %v", err)
+		}
+	}()
 
 	gitignoreContent := []byte("*.log\n/node_modules/\n!important.log\n")
 	err = os.WriteFile(filepath.Join(tempDir, ".gitignore"), gitignoreContent, 0644)
@@ -51,11 +55,11 @@ func TestGitignoreParsing(t *testing.T) {
 		path     string
 		expected bool
 	}{
-		{"file.txt", false},              
-		{"file.log", true},               
-		{"important.log", false},         
-		{"node_modules/module.js", true}, 
-		{"subfolder/file.log", true},     
+		{"file.txt", false},
+		{"file.log", true},
+		{"important.log", false},
+		{"node_modules/module.js", true},
+		{"subfolder/file.log", true},
 	}
 
 	for _, tc := range testCases {
@@ -72,7 +76,11 @@ func TestNestedGitignores(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp directory: %v", err)
+		}
+	}()
 
 	rootGitignore := []byte("*.log\n!important.log\n")
 	err = os.WriteFile(filepath.Join(tempDir, ".gitignore"), rootGitignore, 0644)
@@ -178,7 +186,7 @@ func TestNestedGitignores(t *testing.T) {
 
 	subFolderIgnorer := checker.gitignoreFiles["subfolder"]
 	if subFolderIgnorer != nil {
-		relToSubfolder := "file.log" 
+		relToSubfolder := "file.log"
 		subFolderMatches, subFolderPattern := subFolderIgnorer.MatchesPathHow(relToSubfolder)
 		if subFolderMatches && subFolderPattern != nil {
 			t.Logf("  - Matches subfolder pattern: \"%s\" (negate: %v)",
@@ -208,11 +216,11 @@ func TestNestedGitignores(t *testing.T) {
 		path     string
 		expected bool
 	}{
-		{"file.txt", false},           
-		{"file.log", true},            
-		{"important.log", false},      
-		{"subfolder/file.log", false}, 
-		{"subfolder/file.txt", true},  
+		{"file.txt", false},
+		{"file.log", true},
+		{"important.log", false},
+		{"subfolder/file.log", false},
+		{"subfolder/file.txt", true},
 	}
 
 	for _, tc := range testCases {
@@ -232,7 +240,11 @@ func TestDefaultIgnorePatterns(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp directory: %v", err)
+		}
+	}()
 
 	filesToIgnore := []string{
 		"node_modules/module.js",
@@ -315,7 +327,7 @@ func TestDefaultIgnorePatterns(t *testing.T) {
 
 	for _, file := range filesToProcess {
 		if file == "README.md" {
-			continue 
+			continue
 		}
 		fullPath := filepath.Join(tempDir, file)
 		isIgnored := checker.IsIgnored(fullPath)
@@ -330,7 +342,11 @@ func TestWalkerBasic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp directory: %v", err)
+		}
+	}()
 
 	testFiles := map[string]string{
 		"file1.go":           "package main\nfunc main() {}\n",
@@ -377,7 +393,11 @@ func TestWalkerWithGitignore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp directory: %v", err)
+		}
+	}()
 
 	gitignoreContent := []byte("*.log\n/node_modules/\n!important.log\n")
 	err = os.WriteFile(filepath.Join(tempDir, ".gitignore"), gitignoreContent, 0644)
@@ -392,11 +412,11 @@ func TestWalkerWithGitignore(t *testing.T) {
 		"node_modules/module.js":  "// JS comment\nfunction test() {}\n",
 		"subfolder/file.go":       "// Another comment\npackage sub\n",
 		"subfolder/file.log":      "sub log content",
-		"subfolder/.gitignore":    "!*.log\n*.txt\n", 
+		"subfolder/.gitignore":    "!*.log\n*.txt\n",
 		"subfolder/file.txt":      "text content",
 		"subfolder/important.txt": "important text",
-		".vscode/settings.json":   "{ \"setting\": true }", 
-		"file.tmp":                "temporary content",     
+		".vscode/settings.json":   "{ \"setting\": true }",
+		"file.tmp":                "temporary content",
 	}
 
 	for file, content := range testFiles {
@@ -437,8 +457,8 @@ func TestWalkerWithGitignore(t *testing.T) {
 		filepath.Join(tempDir, "node_modules/module.js"),
 		filepath.Join(tempDir, "subfolder/file.txt"),
 		filepath.Join(tempDir, "subfolder/important.txt"),
-		filepath.Join(tempDir, ".vscode/settings.json"), 
-		filepath.Join(tempDir, "file.tmp"),              
+		filepath.Join(tempDir, ".vscode/settings.json"),
+		filepath.Join(tempDir, "file.tmp"),
 	}
 
 	for _, path := range expectedProcessed {
@@ -459,7 +479,11 @@ func TestWalkerWithProcessorError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp directory: %v", err)
+		}
+	}()
 
 	testFiles := []string{
 		"file1.go",
