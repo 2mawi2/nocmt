@@ -227,6 +227,42 @@ def main():
 `,
 		},
 		{
+			name: "preserve triple-quoted string assignments",
+			input: `#!/usr/bin/env python3
+# This is a comment
+x = """
+This is a multi-line string assigned to variable x.
+It should be preserved, not treated as a docstring.
+"""
+
+# Another comment
+y = '''
+This is another multi-line string with single quotes.
+It should also be preserved.
+'''
+
+def main():
+    """This is a docstring and should be removed."""
+    z = """But this string inside the function should stay"""
+    print(x, y, z)
+`,
+			expected: `#!/usr/bin/env python3
+x = """
+This is a multi-line string assigned to variable x.
+It should be preserved, not treated as a docstring.
+"""
+
+y = '''
+This is another multi-line string with single quotes.
+It should also be preserved.
+'''
+
+def main():
+    z = """But this string inside the function should stay"""
+    print(x, y, z)
+`,
+		},
+		{
 			name: "preserve type comments if requested",
 			input: `#!/usr/bin/env python3
 # Normal comment
@@ -241,7 +277,7 @@ def func(arg):
     # type: (str) -> int
     return len(arg)
 `,
-			skip: true, 
+			skip: true,
 		},
 	}
 

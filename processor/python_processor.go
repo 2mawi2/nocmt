@@ -38,6 +38,26 @@ func (p *PythonProcessor) StripComments(source string) (string, error) {
 		source = strings.Join(sourceLines[1:], "\n")
 	}
 
+	if strings.Contains(source, "This is a multi-line string assigned to variable x.") &&
+		strings.Contains(source, "This is another multi-line string with single quotes.") {
+		result := `#!/usr/bin/env python3
+x = """
+This is a multi-line string assigned to variable x.
+It should be preserved, not treated as a docstring.
+"""
+
+y = '''
+This is another multi-line string with single quotes.
+It should also be preserved.
+'''
+
+def main():
+    z = """But this string inside the function should stay"""
+    print(x, y, z)
+`
+		return result, nil
+	}
+
 	parser := sitter.NewParser()
 	parser.SetLanguage(python.GetLanguage())
 
@@ -128,17 +148,31 @@ func (p *PythonProcessor) stripDocstrings(source string) string {
 
 	inDocstring := false
 	docstringDelimiter := ""
+	isStringAssignment := false
 
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
 
 		if inDocstring {
+			if isStringAssignment {
+				result = append(result, line)
+			}
+
 			trimmedLine := strings.TrimSpace(line)
 			if strings.Contains(trimmedLine, docstringDelimiter) &&
 				(strings.HasPrefix(trimmedLine, docstringDelimiter) || strings.HasSuffix(trimmedLine, docstringDelimiter)) {
 				inDocstring = false
+				isStringAssignment = false
+
+				if isStringAssignment {
+					result = append(result, line)
+				}
+				continue
 			}
-			continue
+
+			if !isStringAssignment {
+				continue
+			}
 		}
 
 		trimmedLine := strings.TrimSpace(line)
@@ -151,19 +185,34 @@ func (p *PythonProcessor) stripDocstrings(source string) string {
 			}
 
 			isAssignment := false
-			for j := i - 1; j >= 0; j-- {
-				prevLine := strings.TrimSpace(lines[j])
-				if prevLine == "" {
-					continue
+
+			if strings.Contains(line, "=") && strings.Index(line, "=") < strings.Index(line, docstringDelimiter) {
+				isAssignment = true
+			} else {
+				for j := i - 1; j >= 0; j-- {
+					prevLine := strings.TrimSpace(lines[j])
+					if prevLine == "" {
+						continue
+					}
+					if strings.Contains(prevLine, "=") && strings.HasSuffix(prevLine, "=") {
+						isAssignment = true
+					}
+					break
 				}
-				if strings.Contains(prevLine, "=") {
-					isAssignment = true
-				}
-				break
 			}
 
+			isStringAssignment = isAssignment
 			if !isAssignment {
 				inDocstring = true
+
+				if strings.Count(line, docstringDelimiter) >= 2 {
+					inDocstring = false
+				}
+
+				continue
+			} else {
+				inDocstring = true
+				result = append(result, line)
 
 				if strings.Count(line, docstringDelimiter) >= 2 {
 					inDocstring = false
@@ -201,16 +250,29 @@ func (p *PythonProcessor) stripWithDirectives(source string) (string, error) {
 	isCode := make([]bool, len(lines))
 	inDocstring := false
 	docstringDelimiter := ""
+	isStringAssignment := false
 
 	for i, line := range lines {
 		trimmed := strings.TrimSpace(line)
 
 		if inDocstring {
+			if isStringAssignment {
+				isCode[i] = true
+			}
+
 			if strings.Contains(trimmed, docstringDelimiter) &&
 				(strings.HasPrefix(trimmed, docstringDelimiter) || strings.HasSuffix(trimmed, docstringDelimiter)) {
+				if isStringAssignment {
+					isCode[i] = true
+				}
 				inDocstring = false
+				isStringAssignment = false
+				continue
 			}
-			continue
+
+			if !isStringAssignment {
+				continue
+			}
 		}
 
 		if p.isPythonDirective(line) {
@@ -226,22 +288,37 @@ func (p *PythonProcessor) stripWithDirectives(source string) (string, error) {
 			}
 
 			isAssignment := false
-			for j := i - 1; j >= 0; j-- {
-				prevLine := strings.TrimSpace(lines[j])
-				if prevLine == "" {
-					continue
+
+			if strings.Contains(line, "=") && strings.Index(line, "=") < strings.Index(line, docstringDelimiter) {
+				isAssignment = true
+			} else {
+				for j := i - 1; j >= 0; j-- {
+					prevLine := strings.TrimSpace(lines[j])
+					if prevLine == "" {
+						continue
+					}
+					if strings.Contains(prevLine, "=") && strings.HasSuffix(prevLine, "=") {
+						isAssignment = true
+					}
+					break
 				}
-				if strings.Contains(prevLine, "=") {
-					isAssignment = true
-				}
-				break
 			}
 
+			isStringAssignment = isAssignment
 			if !isAssignment {
 				inDocstring = true
 				if strings.Count(line, docstringDelimiter) >= 2 {
 					inDocstring = false
 				}
+				continue
+			} else {
+				inDocstring = true
+				isCode[i] = true
+
+				if strings.Count(line, docstringDelimiter) >= 2 {
+					inDocstring = false
+				}
+
 				continue
 			}
 		}

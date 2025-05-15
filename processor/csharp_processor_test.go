@@ -139,7 +139,8 @@ class Program
 	{
 		Console.WriteLine("Hello");
 	}
-}`,
+}
+`,
 		},
 		{
 			name: "comments inside string literals",

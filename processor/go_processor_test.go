@@ -94,7 +94,8 @@ func main() {
 
 func main() {
 	fmt.Println("Hello")
-}`,
+}
+`,
 		},
 		{
 			name: "comments inside string literals",

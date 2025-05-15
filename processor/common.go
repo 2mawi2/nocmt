@@ -215,15 +215,8 @@ func removeComments(source string, ranges []CommentRange) string {
 
 	for i, line := range lines {
 		trimmedLine := strings.TrimSpace(line)
-		shouldKeepLine := true
 
-		if commentOnlyLines[i] && trimmedLine == "" {
-			shouldKeepLine = false
-		} else {
-			shouldKeepLine = true
-		}
-
-		if shouldKeepLine {
+		if !commentOnlyLines[i] || trimmedLine != "" {
 			cleanedLines = append(cleanedLines, line)
 		}
 	}

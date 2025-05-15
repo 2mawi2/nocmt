@@ -74,7 +74,8 @@ function main() {
 `,
 			expected: `function main() {
 	console.log("Hello");
-}`,
+}
+`,
 		},
 		{
 			name: "comments inside string literals",
