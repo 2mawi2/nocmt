@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config gcc-multilib g++-multilib make
+          sudo apt-get install -y pkg-config gcc g++ make
 
       - name: Extract current version
         id: version
@@ -55,16 +55,16 @@ jobs:
           VERSION=${{ steps.version.outputs.version }}
           
           # Linux amd64
-          GOOS=linux GOARCH=amd64 go build -o artifacts/nocmt-linux-amd64 -ldflags="-s -w -X main.Version=$VERSION" .
+          GOOS=linux GOARCH=amd64 go build -v -o artifacts/nocmt-linux-amd64 -ldflags="-s -w -X main.Version=$VERSION" .
           
           # MacOS amd64
-          GOOS=darwin GOARCH=amd64 go build -o artifacts/nocmt-darwin-amd64 -ldflags="-s -w -X main.Version=$VERSION" .
+          GOOS=darwin GOARCH=amd64 go build -v -o artifacts/nocmt-darwin-amd64 -ldflags="-s -w -X main.Version=$VERSION" .
           
           # MacOS arm64
-          GOOS=darwin GOARCH=arm64 go build -o artifacts/nocmt-darwin-arm64 -ldflags="-s -w -X main.Version=$VERSION" .
+          GOOS=darwin GOARCH=arm64 go build -v -o artifacts/nocmt-darwin-arm64 -ldflags="-s -w -X main.Version=$VERSION" .
           
           # Windows amd64
-          GOOS=windows GOARCH=amd64 go build -o artifacts/nocmt-windows-amd64.exe -ldflags="-s -w -X main.Version=$VERSION" .
+          GOOS=windows GOARCH=amd64 go build -v -o artifacts/nocmt-windows-amd64.exe -ldflags="-s -w -X main.Version=$VERSION" .
           
           # Create checksums
           cd artifacts
@@ -113,7 +113,6 @@ jobs:
             depends_on "go" => :build
           
             def install
-              # Build from source
               system "go", "build", *std_go_args(ldflags: "-s -w -X main.Version=${{ needs.build.outputs.version }}")
             end
           
