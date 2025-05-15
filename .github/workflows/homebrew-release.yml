@@ -2,12 +2,12 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - 'release'
   workflow_dispatch:
     inputs:
       force_release:
-        description: 'Force a release even without a tag'
+        description: 'Force a release even when not on release branch'
         required: false
         default: false
         type: boolean
@@ -20,7 +20,8 @@ jobs:
     name: Build Release Binaries
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -38,29 +39,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pkg-config gcc-multilib g++-multilib make
 
-      - name: Generate version
+      - name: Extract current version
         id: version
         run: |
-          # If triggered by tag
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
-            echo "tag=v$VERSION" >> $GITHUB_OUTPUT
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-          # If workflow_dispatch with force_release
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.force_release }}" == "true" ]]; then
-            # Get date-based version or use git tag if available
-            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-            VERSION_BASE=$(echo $LATEST_TAG | sed 's/^v//')
-            # Bump patch version
-            IFS='.' read -ra VER_PARTS <<< "$VERSION_BASE"
-            NEXT_VERSION="${VER_PARTS[0]}.${VER_PARTS[1]}.$((${VER_PARTS[2]}+1))"
-            echo "tag=v$NEXT_VERSION" >> $GITHUB_OUTPUT
-            echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
-          else
-            echo "No version tag found and force_release not enabled"
-            exit 1
-          fi
-          echo "Version: $VERSION"
+          # Extract current version from the code
+          # You may need to adjust this to extract from your version file/constant
+          CURRENT_VERSION=$(grep -oP 'const Version = "\K[^"]+' main.go || echo "0.0.1")
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT_VERSION"
 
       - name: Build for multiple platforms
         run: |
@@ -109,7 +96,7 @@ jobs:
           
       - name: Download release tarball and calculate SHA
         run: |
-          curl -L https://github.com/2mawi2/nocmt/archive/refs/tags/${{ needs.build.outputs.version }}.tar.gz -o nocmt.tar.gz
+          curl -L https://github.com/2mawi2/nocmt/archive/refs/tags/${{ needs.build.outputs.tag }}.tar.gz -o nocmt.tar.gz
           SHA256=$(sha256sum nocmt.tar.gz | awk '{print $1}')
           echo "SHA256=$SHA256" >> $GITHUB_ENV
           
@@ -119,7 +106,7 @@ jobs:
           class Nocmt < Formula
             desc "Tool for removing comments from source code while preserving structure"
             homepage "https://github.com/2mawi2/nocmt"
-            url "https://github.com/2mawi2/nocmt/archive/refs/tags/${{ needs.build.outputs.version }}.tar.gz"
+            url "https://github.com/2mawi2/nocmt/archive/refs/tags/${{ needs.build.outputs.tag }}.tar.gz"
             sha256 "${SHA256}"
             license "MIT"
           
@@ -143,4 +130,50 @@ jobs:
           git config user.email "actions@github.com"
           git add Formula/nocmt.rb
           git commit -m "Update nocmt to ${{ needs.build.outputs.version }}"
-          git push 
+          git push
+
+  increment-version:
+    needs: [build, update-homebrew]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/release' || github.event.inputs.force_release == 'true'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Set up Git
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "actions@github.com"
+      
+      - name: Increment Version
+        run: |
+          # Get current version from the output
+          CURRENT_VERSION=${{ needs.build.outputs.version }}
+          
+          # Parse the version
+          IFS='.' read -ra VER_PARTS <<< "$CURRENT_VERSION"
+          MAJOR=${VER_PARTS[0]}
+          MINOR=${VER_PARTS[1]}
+          PATCH=$((${VER_PARTS[2]}+1))
+          
+          # Create new version
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "New version: $NEW_VERSION"
+          
+          # Update version in main.go (adjust file path as needed)
+          sed -i "s/const Version = \"$CURRENT_VERSION\"/const Version = \"$NEW_VERSION\"/" main.go
+          
+          # Create a branch for the version bump
+          git checkout -b version-bump-$NEW_VERSION
+          git add main.go
+          git commit -m "Bump version to $NEW_VERSION"
+          git push origin version-bump-$NEW_VERSION
+          
+          # Create a pull request
+          gh pr create --base main --head version-bump-$NEW_VERSION \
+            --title "Bump version to $NEW_VERSION" \
+            --body "Automated version bump after release $CURRENT_VERSION"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
