@@ -43,8 +43,8 @@ jobs:
         id: version
         run: |
           # Extract current version from the code
-          # You may need to adjust this to extract from your version file/constant
-          CURRENT_VERSION=$(grep -oP 'const Version = "\K[^"]+' main.go || echo "0.0.1")
+          # Match the format in main.go: var Version = "dev"
+          CURRENT_VERSION=$(grep -oP 'var Version = "\K[^"]+' main.go || echo "0.0.1")
           echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "tag=v$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $CURRENT_VERSION"
@@ -127,7 +127,7 @@ jobs:
         run: |
           cd homebrew-tap
           git config user.name "GitHub Action"
-          git config user.email "actions@github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add Formula/nocmt.rb
           git commit -m "Update nocmt to ${{ needs.build.outputs.version }}"
           git push
@@ -145,7 +145,7 @@ jobs:
       - name: Set up Git
         run: |
           git config user.name "GitHub Action"
-          git config user.email "actions@github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       
       - name: Increment Version
         run: |
@@ -163,7 +163,7 @@ jobs:
           echo "New version: $NEW_VERSION"
           
           # Update version in main.go (adjust file path as needed)
-          sed -i "s/const Version = \"$CURRENT_VERSION\"/const Version = \"$NEW_VERSION\"/" main.go
+          sed -i "s/var Version = \"$CURRENT_VERSION\"/var Version = \"$NEW_VERSION\"/" main.go
           
           # Create a branch for the version bump
           git checkout -b version-bump-$NEW_VERSION
