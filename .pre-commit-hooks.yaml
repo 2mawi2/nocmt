@@ -1,0 +1,8 @@
+- id: nocmt
+  name: nocmt
+  description: Remove comments from source code
+  entry: nocmt --staged --preserve-directives
+  language: golang
+  files: \.(go|js|ts|java|py|cs|rs|kt|swift|sh|css)$
+  stages: [commit]
+  require_serial: true 

@@ -1,0 +1,19 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Language Processing
+
+Comment stripping logic is language-specific, managed by the `processor` package.
+
+## Key Files & Concepts
+- **Core Interface**: `LanguageProcessor` defines the contract for all language strippers. Located in [processor/processor.go](mdc:processor/processor.go).
+- **Processor Factory**: `ProcessorFactory` in [processor/processor.go](mdc:processor/processor.go) is used to obtain an appropriate `LanguageProcessor` for a given file type or language name. It handles `--preserve-directives` settings.
+- **Implementations**: Each supported language has a `*_processor.go` file (e.g., [processor/go_processor.go](mdc:processor/go_processor.go), [processor/python_processor.go](mdc:processor/python_processor.go)).
+  - To add a new language:
+    1. Create `processor/<new_lang>_processor.go`.
+    2. Implement the `LanguageProcessor` interface.
+    3. Register the new processor in `ProcessorFactory` within [processor/processor.go](mdc:processor/processor.go).
+- **Shared Utilities**: Common comment processing utilities (e.g., tree-sitter parsing helpers, comment range management) are in [processor/common.go](mdc:processor/common.go).
+- **Selective Removal Logic**: For features like `--staged`, the core logic for identifying which comments to remove based on diffs is in [processor/selective_removal.go](mdc:processor/selective_removal.go).

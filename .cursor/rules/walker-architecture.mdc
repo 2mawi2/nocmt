@@ -1,0 +1,21 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Walker Architecture
+
+The walker package handles directory traversal and file selection logic.
+
+## Core Components
+
+- [walker.go](mdc:walker/walker.go): Main walker implementation for traversing directories
+- [gitignore.go](mdc:walker/gitignore.go): Implements .gitignore file parsing and pattern matching
+- [git_validation.go](mdc:walker/git_validation.go): Validates if directory is a git repository
+- [processor_integration.go](mdc:walker/processor_integration.go): Integrates processors with the walker
+
+## Features
+
+- Respects nested .gitignore files
+- Skips common directories and files by default (node_modules, .git, etc.)
+- Git repository validation to prevent accidental modification of non-versioned files

@@ -1,0 +1,25 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Advanced Features & Configuration
+
+NoCmt offers several advanced features to customize its behavior.
+
+## Key Components
+- **Configuration Management**:
+    - The `Config` struct in [config/config.go](mdc:config/config.go) manages settings.
+    - Settings are loaded from CLI flags (parsed in [main.go](mdc:main.go)), global `~/.nocmt/config.json`, and local `.nocmt.json` files.
+    - Primarily used for defining comment/file ignore patterns.
+- **Staged Processing (`--staged` flag)**:
+    - Enables processing only of Git-staged files and only removes comments from modified lines.
+    - Orchestrated in [main.go](mdc:main.go) (`processStagedFiles` function).
+    - Core diff-aware logic for identifying relevant comments is in [processor/selective_removal.go](mdc:processor/selective_removal.go).
+- **Git Pre-commit Hooks**:
+    - Installation is triggered by `--install-hooks` flag in [main.go](mdc:main.go), using [install-hooks.go](mdc:install-hooks.go).
+    - The hook script itself is [pre-commit](mdc:pre-commit).
+    - The pre-commit framework configuration is in [.pre-commit-hooks.yaml](mdc:.pre-commit-hooks.yaml).
+- **Benchmarking**:
+    - Performance benchmarks are run using the [benchmark.sh](mdc:benchmark.sh) script.
+    - Go benchmark tests are typically located in `_benchmark_test.go` files, e.g., [processor/go_processor_benchmark_test.go](mdc:processor/go_processor_benchmark_test.go).

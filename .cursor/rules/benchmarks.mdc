@@ -1,0 +1,27 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Benchmarking System
+
+The project includes a benchmarking system to track performance over time.
+
+## Components
+
+- [benchmark.sh](mdc:benchmark.sh): Shell script for running and comparing benchmarks
+- [processor/go_processor_benchmark_test.go](mdc:processor/go_processor_benchmark_test.go): Go benchmark tests
+
+## Usage
+
+```
+./benchmark.sh run       # Run benchmarks and save as baseline
+./benchmark.sh quick     # Run a quick benchmark
+./benchmark.sh compare   # Compare current with baseline
+./benchmark.sh history   # Show benchmark history
+```
+
+You can also use the justfile shortcut:
+```
+just bench run
+```

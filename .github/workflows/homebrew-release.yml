@@ -1,0 +1,146 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      force_release:
+        description: 'Force a release even without a tag'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Release Binaries
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.tag }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          cache: true
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config gcc-multilib g++-multilib make
+
+      - name: Generate version
+        id: version
+        run: |
+          # If triggered by tag
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          # If workflow_dispatch with force_release
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.force_release }}" == "true" ]]; then
+            # Get date-based version or use git tag if available
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            VERSION_BASE=$(echo $LATEST_TAG | sed 's/^v//')
+            # Bump patch version
+            IFS='.' read -ra VER_PARTS <<< "$VERSION_BASE"
+            NEXT_VERSION="${VER_PARTS[0]}.${VER_PARTS[1]}.$((${VER_PARTS[2]}+1))"
+            echo "tag=v$NEXT_VERSION" >> $GITHUB_OUTPUT
+            echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "No version tag found and force_release not enabled"
+            exit 1
+          fi
+          echo "Version: $VERSION"
+
+      - name: Build for multiple platforms
+        run: |
+          mkdir -p artifacts
+          VERSION=${{ steps.version.outputs.version }}
+          
+          # Linux amd64
+          GOOS=linux GOARCH=amd64 go build -o artifacts/nocmt-linux-amd64 -ldflags="-s -w -X main.Version=$VERSION" .
+          
+          # MacOS amd64
+          GOOS=darwin GOARCH=amd64 go build -o artifacts/nocmt-darwin-amd64 -ldflags="-s -w -X main.Version=$VERSION" .
+          
+          # MacOS arm64
+          GOOS=darwin GOARCH=arm64 go build -o artifacts/nocmt-darwin-arm64 -ldflags="-s -w -X main.Version=$VERSION" .
+          
+          # Windows amd64
+          GOOS=windows GOARCH=amd64 go build -o artifacts/nocmt-windows-amd64.exe -ldflags="-s -w -X main.Version=$VERSION" .
+          
+          # Create checksums
+          cd artifacts
+          sha256sum * > checksums.txt
+          cd ..
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.tag }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            artifacts/*
+            LICENSE
+
+  update-homebrew:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout homebrew tap repository
+        uses: actions/checkout@v4
+        with:
+          repository: 2mawi2/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+          
+      - name: Download release tarball and calculate SHA
+        run: |
+          curl -L https://github.com/2mawi2/nocmt/archive/refs/tags/${{ needs.build.outputs.version }}.tar.gz -o nocmt.tar.gz
+          SHA256=$(sha256sum nocmt.tar.gz | awk '{print $1}')
+          echo "SHA256=$SHA256" >> $GITHUB_ENV
+          
+      - name: Update formula
+        run: |
+          cat > homebrew-tap/Formula/nocmt.rb << EOL
+          class Nocmt < Formula
+            desc "Tool for removing comments from source code while preserving structure"
+            homepage "https://github.com/2mawi2/nocmt"
+            url "https://github.com/2mawi2/nocmt/archive/refs/tags/${{ needs.build.outputs.version }}.tar.gz"
+            sha256 "${SHA256}"
+            license "MIT"
+          
+            depends_on "go" => :build
+          
+            def install
+              # Build from source
+              system "go", "build", *std_go_args(ldflags: "-s -w -X main.Version=${{ needs.build.outputs.version }}")
+            end
+          
+            test do
+              assert_match "nocmt version", shell_output("#{bin}/nocmt --version")
+            end
+          end
+          EOL
+          
+      - name: Commit and push updated formula
+        run: |
+          cd homebrew-tap
+          git config user.name "GitHub Action"
+          git config user.email "actions@github.com"
+          git add Formula/nocmt.rb
+          git commit -m "Update nocmt to ${{ needs.build.outputs.version }}"
+          git push 

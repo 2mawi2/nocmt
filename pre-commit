@@ -1,0 +1,67 @@
+#!/bin/sh
+#
+# pre-commit hook that runs nocmt on staged files
+# Can be used with pre-commit framework by adding this to .pre-commit-config.yaml:
+#
+# repos:
+# - repo: https://github.com/yourusername/nocmt
+#   rev: v1.0.0
+#   hooks:
+#   - id: nocmt
+#     name: nocmt
+#     description: Remove comments from source code
+#     entry: nocmt --staged --preserve-directives
+#     language: golang
+#     files: \.(go|js|ts|java|py|cs|rs|kt|swift|sh|css)$
+
+# Exit on error
+set -e
+
+# Check if running as a pre-commit hook directly or through pre-commit framework
+if [ -z "$PRE_COMMIT_FRAMEWORK" ]; then
+    # Running as a direct git hook
+    LOG_FILE="/tmp/nocmt_precommit_$$.log"
+    echo "Starting nocmt pre-commit hook $(date)" > "$LOG_FILE"
+    
+    # Get list of staged files
+    STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+    echo "Staged files: $STAGED_FILES" >> "$LOG_FILE"
+    
+    if [ -z "$STAGED_FILES" ]; then
+        echo "No staged files found, skipping nocmt" >> "$LOG_FILE"
+        exit 0
+    fi
+    
+    # Check if nocmt is in PATH, otherwise use the local binary
+    NOCMT_CMD="nocmt"
+    if ! command -v $NOCMT_CMD >/dev/null 2>&1; then
+        echo "Using local nocmt binary..." | tee -a "$LOG_FILE"
+        NOCMT_CMD="./nocmt"
+        if [ ! -x "$NOCMT_CMD" ]; then
+            echo "Error: nocmt not found in PATH or current directory" | tee -a "$LOG_FILE"
+            echo "Please build the nocmt binary first or add it to your PATH" | tee -a "$LOG_FILE"
+            exit 1
+        fi
+    fi
+    
+    echo "Running nocmt to remove comments from staged files..." | tee -a "$LOG_FILE"
+    
+    # Use the --staged flag to process all staged files at once
+    echo "Running: $NOCMT_CMD --staged --preserve-directives" >> "$LOG_FILE"
+    $NOCMT_CMD --staged --preserve-directives 2>&1 | tee -a "$LOG_FILE"
+    
+    # Check if nocmt was successful
+    if [ ${PIPESTATUS[0]} -ne 0 ]; then
+        echo "Error: nocmt failed to process staged files" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+    
+    echo "nocmt pre-commit hook completed at $(date)" >> "$LOG_FILE"
+    echo "Log saved to $LOG_FILE"
+else
+    # Running through pre-commit framework, let nocmt handle everything
+    nocmt --staged --preserve-directives
+fi
+
+# Exit with success status
+exit 0 
