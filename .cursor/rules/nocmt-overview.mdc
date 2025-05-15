@@ -1,0 +1,26 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+**Project: nocmt**
+
+**Core Purpose:**
+`nocmt` is a Go CLI tool to remove comments from source code. It's especially useful for cleaning up AI-generated comments while preserving important directives.
+
+**Key Features:**
+-   **Multi-language Comment Removal:** Supports Go, JS/TS, Python, Java, Rust, Bash, CSS, etc. See language processors in `processor/`.
+-   **Directive Preservation:** Keeps compiler directives (e.g., `//go:generate`, `#!/bin/bash`) by default. Toggle with `--remove-directives`.
+-   **Git-Aware Staged Processing:** By default (`nocmt` or `nocmt --staged`), processes only modified lines in Git-staged files.
+-   **Configurable Ignore Patterns:** Uses `.nocmt.json` (local) and `~/.nocmt/config.json` (global) to specify comment patterns or files to ignore.
+-   **Parsing:** Uses Tree-sitter for accurate, AST-based comment identification (`processor/common.go`).
+
+**Main Entry & Key Logic:**
+-   `main.go`: CLI argument parsing, main application flow.
+-   `processor/processor.go`: `ProcessorFactory` and `LanguageProcessor` interface.
+-   `config/config.go`: Handles loading and applying configurations.
+-   `walker/walker.go`: File system traversal, respects `.gitignore`.
+-   `processor/selective_removal.go`: Logic for processing only modified lines in staged files.
+
+**Primary Goal for AI Assistance:**
+Help with maintaining/extending language processors, improving CLI options, or enhancing the Git integration logic.

@@ -1,0 +1,16 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+**Key Go Coding Conventions for `nocmt`:**
+
+-   **Formatting:** `gofmt` is mandatory.
+-   **Linting:** Use `golangci-lint` (see CI in `.github/workflows/go-test.yml`). Run with `just lint`.
+-   **Naming:** Standard Go conventions (CamelCase for exported, camelCase for unexported).
+-   **Error Handling:** Explicit `if err != nil`. Use `fmt.Errorf("...: %w", err)` for wrapping.
+-   **Testing:**
+    -   Unit tests in `*_test.go` files using `testing` package.
+    -   `testify/assert` is used for assertions (`go.mod`).
+-   **Dependencies:** Managed via Go Modules (`go.mod`). Keep minimal.
+-   **Go Version:** See `go.mod` (currently 1.22+).

@@ -1,0 +1,35 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+**Development Setup:**
+1.  Clone repo, `cd nocmt`.
+2.  Install Go (see `go.mod`).
+3.  `go mod download`.
+4.  Build: `go build -o nocmt` or `just build` (see `justfile`).
+
+**Adding a New Language:** (Primary extension point)
+1.  **Create Processor:** In `processor/`, implement `LanguageProcessor` interface (see `processor.go`).
+    -   Embed `BaseProcessor` from `common.go`.
+    -   Use Tree-sitter grammar for the language (add to `go.mod`).
+    -   Implement `StripComments()`, `GetLanguageName()`, `PreserveDirectives()`.
+    -   Add `isYourLangDirective()` if needed for directive preservation.
+2.  **Register Processor:** In `processor.go`:
+    -   Add to `ProcessorFactory` via `RegisterConstructor()`.
+    -   Map file extensions in `GetProcessorByExtension()`.
+3.  **Add Tests:** Create `yourlang_processor_test.go` with comprehensive cases.
+
+**Testing:**
+-   Run all tests: `just test` or `go test ./...`.
+-   Processor-specific tests are in `processor/`.
+
+**Linting:**
+-   Run: `just lint` (uses `golangci-lint`).
+-   CI checks this (see `.github/workflows/go-test.yml`).
+
+**Benchmarking:**
+-   Use `benchmark.sh` script via `just bench [run|quick|compare|history]`.
+-   Benchmark tests are in `*_benchmark_test.go`.
+
+Refer to `CONTRIBUTING.md` for more detailed contribution guidelines.
