@@ -31,7 +31,6 @@ func (p *KotlinProcessor) StripComments(source string) (string, error) {
 		return "", err
 	}
 
-	// Handle shebang line if present
 	shebangLine := ""
 	sourceLines := strings.Split(source, "\n")
 	if len(sourceLines) > 0 && strings.HasPrefix(sourceLines[0], "#!") {
@@ -41,7 +40,6 @@ func (p *KotlinProcessor) StripComments(source string) (string, error) {
 
 	endsWithNewline := strings.HasSuffix(source, "\n")
 
-	// If preserving directives is needed, identify directive lines
 	var directiveLines map[int]string
 	if p.preserveDirectives {
 		directiveLines = make(map[int]string)
@@ -54,14 +52,12 @@ func (p *KotlinProcessor) StripComments(source string) (string, error) {
 		}
 	}
 
-	// Process strings
 	multilineStringPlaceholders := make(map[string]string)
 	processedSource := p.protectMultilineStrings(source, multilineStringPlaceholders)
 
 	stringPlaceholders := make(map[string]string)
 	processedSource = p.protectNormalStrings(processedSource, stringPlaceholders)
 
-	// Remove comments except for directives
 	lines := strings.Split(processedSource, "\n")
 	for i := range lines {
 		if !p.preserveDirectives || directiveLines[i] == "" {
@@ -75,11 +71,9 @@ func (p *KotlinProcessor) StripComments(source string) (string, error) {
 
 	processedSource = p.removeBlockComments(processedSource)
 
-	// Restore strings
 	processedSource = p.restoreStrings(processedSource, stringPlaceholders)
 	processedSource = p.restoreMultilineStrings(processedSource, multilineStringPlaceholders)
 
-	// Restore directives if needed
 	if p.preserveDirectives && len(directiveLines) > 0 {
 		lines := strings.Split(processedSource, "\n")
 
@@ -92,15 +86,12 @@ func (p *KotlinProcessor) StripComments(source string) (string, error) {
 		processedSource = strings.Join(lines, "\n")
 	}
 
-	// Clean up whitespace and empty lines
 	processedSource = p.cleanEmptyLines(processedSource)
 
-	// Restore shebang line if it was present
 	if shebangLine != "" {
 		processedSource = shebangLine + "\n" + processedSource
 	}
 
-	// Ensure the newline at the end matches the original
 	if endsWithNewline && !strings.HasSuffix(processedSource, "\n") {
 		processedSource += "\n"
 	} else if !endsWithNewline && strings.HasSuffix(processedSource, "\n") {
@@ -211,7 +202,6 @@ func (p *KotlinProcessor) cleanEmptyLines(source string) string {
 	return strings.Join(result, "\n")
 }
 
-// isKotlinDirective checks if a line contains a Kotlin annotation/directive
 func (p *KotlinProcessor) isKotlinDirective(line string) bool {
 	trimmed := strings.TrimSpace(line)
 

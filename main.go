@@ -16,7 +16,6 @@ import (
 	"nocmt/walker"
 )
 
-// Version is set during build via -ldflags
 var Version = "dev"
 
 func main() {

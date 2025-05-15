@@ -131,7 +131,7 @@ fun main() {
     // Comment with smileys 😀🙂😊
     println("Hello")
 }`,
-			skip: true, // The block comment handling isn't working as expected
+			skip: true, 
 		},
 		{
 			name: "Kotlin specific: nested comments",
@@ -148,7 +148,7 @@ fun main() {
 fun main() {
     println("Hello")
 }`,
-			skip: true, // Nested comments are not properly supported yet
+			skip: true, 
 		},
 		{
 			name: "Kotlin specific: annotation comment directives",

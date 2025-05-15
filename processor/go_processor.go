@@ -41,7 +41,6 @@ func (p *GoProcessor) stripCommentsPreserveDirectives(source string, parser *sit
 	lines := strings.Split(source, "\n")
 	directiveLines := make(map[int]bool)
 
-	// Mark lines containing directives
 	for i, line := range lines {
 		if p.isGoDirective(line) {
 			directiveLines[i] = true
@@ -55,7 +54,6 @@ func (p *GoProcessor) stripCommentsPreserveDirectives(source string, parser *sit
 
 	filteredRanges := make([]CommentRange, 0)
 
-	// Keep only comments that don't contain directives
 	for _, r := range commentRanges {
 		startLine, endLine := FindCommentLineNumbers(source, r)
 
@@ -72,7 +70,6 @@ func (p *GoProcessor) stripCommentsPreserveDirectives(source string, parser *sit
 		}
 	}
 
-	// Filter comments based on ignore patterns
 	if p.commentConfig != nil {
 		var ignoreFilteredRanges []CommentRange
 		for _, r := range filteredRanges {

@@ -24,7 +24,6 @@ func (p *SwiftProcessor) PreserveDirectives() bool {
 	return p.preserveDirectives
 }
 
-// comment test
 func (p *SwiftProcessor) StripComments(source string) (string, error) {
 	if processed, ok := p.handleSpecialTestCases(source); ok {
 		return processed, nil
