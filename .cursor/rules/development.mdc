@@ -1,0 +1,77 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Development Rules
+
+*   ABSOLUTELY NO COMMENTS: Do not write any comments in the source code.
+*   ALWAYS run all tests before stating a task is complete. No code-edit is complete until all tests are green and the project is building without errrors.
+*   Conciseness: Keep code brief and to the point. Avoid unnecessary verbosity.
+*   Clarity: Write code that is self-explanatory. Use meaningful variable and function names.
+*   Existing Patterns: Follow the established architectural patterns and coding style found in the repository.
+*   macOS Focus: Remember this is a macOS-only application. Use appropriate macOS APIs and conventions (AppKit, SwiftUI for macOS).
+*   SwiftData: Use SwiftData correctly for data persistence, especially concerning `@MainActor` for UI updates when interacting with the `ModelContext`.
+*   Concurrency: Use Swift Concurrency (`async`/`await`, Actors) appropriately, especially for background tasks like transcription and network requests. Pay attention to thread safety, particularly around `WhisperContext`.
+
+BEFORE ANY CODE CHANGE:
+1. Read and understand the relevant files using read_file
+2. Make a quick, clear step-by-step plan
+3. Search for similar patterns in the codebase using codebase_search
+4. Identify affected tests and dependencies
+
+TESTING APPROACH:
+1. Write the smallest possible test that verifies the new behavior
+2. Test only public interfaces and outcomes, not implementation details
+3. Use meaningful test names that describe the behavior being tested
+4. Keep test setup minimal and explicit
+5. Mock external dependencies, not internal code
+6. Use vi.mock to mock external dependencies
+7. Use vitest instead of jest
+MAKING CHANGES:
+1. Make one small change at a time
+2. **CRITICAL STEP:** Run tests (`just test`) after EVERY change using your terminal tool. Before calling the tool, state "Running tests to verify changes...". Do not proceed if tests fail.
+3. If tests fail:
+   - Read the error message carefully
+   - Check test output for clues
+   - Make a specific plan to fix
+   - Try the simplest fix first
+4. Never proceed with new changes while tests are red
+
+AFTER THE CHANGES:
+1. **IMMEDIATELY run `just test` using you terminal tool**. Do not proceed until tests pass.
+2. Check the build is successful (often covered by `just test`).
+3. Only if tests pass, summarize the changes made.
+4. Only if tests pass, state the task is ready or ask the user for the next step.
+
+CODE QUALITY:
+1. Follow existing patterns in the codebase
+2. Keep changes focused and minimal
+3. Don't modify working code unless necessary
+4. Add types and error handling
+5. NEVER EVER add docstrings to the code
+
+TESTING RULES:
+1. Tests MUST:
+   - Be deterministic (always same result)
+   - Test behavior, not implementation
+   - Be independent of each other
+   - Use clear arrange-act-assert pattern
+   - Use test-ids for assertions on DOM elements
+   - Try to use builders for test data (use the directory test/builders)
+2. Tests must NOT:
+   - Depend on UI text or styles
+   - Test internal state
+   - Be flaky or timing-dependent
+   - Duplicate other tests
+
+EXECUTION ORDER:
+1. Plan → Test → Fail → Code → Pass → Refactor → Verify
+2. Run tests after EVERY change
+3. Never skip steps or make multiple changes at once
+4. If stuck, revert and try a simpler approach
