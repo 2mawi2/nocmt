@@ -262,7 +262,6 @@ public class Main {
 func TestJavaStripCommentsWithDirectives(t *testing.T) {
 	t.Skip("Skipping Java processor tests - implementation needs improvement")
 
-	// testing the precommit hook
 	tests := []struct {
 		name     string
 		input    string
