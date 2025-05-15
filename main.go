@@ -16,11 +16,11 @@ import (
 	"nocmt/walker"
 )
 
-var Version = "0.1.0"
+var Version = "1.0.0"
 
 func main() {
-	var inputPath string
 	var preserveDirectives bool
+	var removeDirectives bool
 	var dryRun bool
 	var verbose bool
 	var force bool
@@ -31,37 +31,43 @@ func main() {
 	var configAddFileIgnore string
 	var configAddFileIgnoreGlobal string
 	var staged bool
-	var installHooks bool
+	var all bool
 	var showVersion bool
 
-	flag.StringVar(&inputPath, "path", "", "Input file or directory path to process")
-	flag.BoolVar(&preserveDirectives, "preserve-directives", false, "Preserve compiler directives")
-	flag.BoolVar(&dryRun, "dry-run", false, "Don't write changes, just show what would be done")
-	flag.BoolVar(&verbose, "verbose", false, "Show verbose output")
-	flag.BoolVar(&force, "force", false, "Force processing even if not a git repository")
-	flag.StringVar(&ignorePatterns, "ignore", "", "Comma-separated list of regex patterns to ignore comments")
+	flag.BoolVar(&removeDirectives, "remove-directives", false, "Remove compiler directives (preserved by default)")
+	flag.BoolVar(&removeDirectives, "r", false, "Remove compiler directives (shorthand)")
+	flag.BoolVar(&dryRun, "dry-run", false, "Preview changes without modifying files")
+	flag.BoolVar(&dryRun, "d", false, "Preview changes without modifying files (shorthand)")
+	flag.BoolVar(&verbose, "verbose", false, "Show detailed output during processing")
+	flag.BoolVar(&verbose, "v", false, "Show detailed output (shorthand)")
+	flag.BoolVar(&force, "force", false, "Run in non-git directories")
+	flag.BoolVar(&force, "f", false, "Run in non-git directories (shorthand)")
+	flag.StringVar(&ignorePatterns, "ignore", "", "Comma-separated list of regex patterns to preserve comments")
 	flag.StringVar(&ignoreFilePatterns, "ignore-file", "", "Comma-separated list of regex patterns to ignore files")
-	flag.StringVar(&configAdd, "add-ignore", "", "Add a regex pattern to the local ignore list")
+	flag.StringVar(&configAdd, "add-ignore", "", "Add a regex pattern to the project's ignore list")
 	flag.StringVar(&configAddGlobal, "add-ignore-global", "", "Add a regex pattern to the global ignore list")
 	flag.StringVar(&configAddFileIgnore, "add-ignore-file", "", "Add a regex pattern to the local file ignore list")
 	flag.StringVar(&configAddFileIgnoreGlobal, "add-ignore-file-global", "", "Add a regex pattern to the global file ignore list")
-	flag.BoolVar(&staged, "staged", false, "Process only staged files and remove comments only in changed lines")
-	flag.BoolVar(&installHooks, "install-hooks", false, "Install git pre-commit hook in the current repository")
+	flag.BoolVar(&staged, "staged", false, "Process only staged files (default behavior)")
+	flag.BoolVar(&staged, "s", false, "Process only staged files (shorthand)")
+	flag.BoolVar(&all, "all", false, "Process all files recursively (be careful with large codebases)")
+	flag.BoolVar(&all, "a", false, "Process all files recursively (shorthand)")
 	flag.BoolVar(&showVersion, "version", false, "Show version information")
 	flag.Parse()
 
-	if showVersion {
-		fmt.Printf("nocmt version %s\n", Version)
-		return
-	}
-
-	if installHooks {
+	args := flag.Args()
+	if len(args) > 0 && args[0] == "install-hooks" {
 		err := InstallPreCommitHook(verbose)
 		if err != nil {
 			fmt.Printf("Error installing pre-commit hook: %v\n", err)
 			os.Exit(1)
 		}
 		fmt.Println("Pre-commit hook installed successfully!")
+		return
+	}
+
+	if showVersion {
+		fmt.Printf("nocmt version %s\n", Version)
 		return
 	}
 
@@ -135,38 +141,51 @@ func main() {
 		}
 	}
 
+	inputPath := ""
+	if len(args) > 0 {
+		inputPath = args[0]
+	}
+
+	preserveDirectives = !removeDirectives
+
+	if inputPath == "" {
+		staged = true
+	}
+
 	if staged {
 		if !isGitRepo() {
-			fmt.Println("Error: --staged flag can only be used inside a git repository")
+			fmt.Println("Error: can only process staged files inside a git repository")
 			os.Exit(1)
 		}
 		processStagedFiles(preserveDirectives, dryRun, verbose, commentConfig)
 		return
 	}
 
-	if inputPath == "" {
-		fmt.Println("Error: Input path not provided")
-		fmt.Println("Usage: nocmt -path <filepath|directory> [-preserve-directives] [-dry-run] [-verbose] [-force] [-ignore pattern1,pattern2] [-ignore-file pattern1,pattern2] [-add-ignore pattern] [-add-ignore-global pattern] [-add-ignore-file pattern] [-add-ignore-file-global pattern] [-staged] [-install-hooks] [-version]")
-		os.Exit(1)
-	}
+	if inputPath != "" {
+		fileInfo, err := os.Stat(inputPath)
+		if os.IsNotExist(err) {
+			fmt.Printf("Error: Path '%s' does not exist\n", inputPath)
+			os.Exit(1)
+		}
 
-	fileInfo, err := os.Stat(inputPath)
-	if os.IsNotExist(err) {
-		fmt.Printf("Error: Path '%s' does not exist\n", inputPath)
-		os.Exit(1)
-	}
+		if !fileInfo.IsDir() {
+			processSingleFile(inputPath, preserveDirectives, commentConfig)
+			return
+		}
 
-	if !fileInfo.IsDir() {
-		processSingleFile(inputPath, preserveDirectives, commentConfig)
+		if !walker.ValidateGitRepository(inputPath, force) {
+			fmt.Println("Aborted: User chose not to proceed with non-git repository.")
+			os.Exit(1)
+		}
+
+		processDirectory(inputPath, preserveDirectives, dryRun, verbose, force, commentConfig)
 		return
 	}
 
-	if !walker.ValidateGitRepository(inputPath, force) {
-		fmt.Println("Aborted: User chose not to proceed with non-git repository.")
-		os.Exit(1)
-	}
-
-	processDirectory(inputPath, preserveDirectives, dryRun, verbose, force, commentConfig)
+	fmt.Println("Error: No action specified")
+	fmt.Println("Usage: nocmt [path] [options]")
+	fmt.Println("       nocmt install-hooks")
+	os.Exit(1)
 }
 
 func isGitRepo() bool {
