@@ -153,15 +153,10 @@ jobs:
           # Update version in main.go (adjust file path as needed)
           sed -i "s/var Version = \"$CURRENT_VERSION\"/var Version = \"$NEW_VERSION\"/" main.go
           
-          # Create a branch for the version bump
-          git checkout -b version-bump-$NEW_VERSION
+          # Commit directly to main branch
+          git checkout main
           git add main.go
           git commit -m "Bump version to $NEW_VERSION"
-          git push origin version-bump-$NEW_VERSION
-          
-          # Create a pull request
-          gh pr create --base main --head version-bump-$NEW_VERSION \
-            --title "Bump version to $NEW_VERSION" \
-            --body "Automated version bump after release $CURRENT_VERSION"
+          git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
