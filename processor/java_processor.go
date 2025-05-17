@@ -67,16 +67,3 @@ func (p *JavaProcessor) StripComments(source string) (string, error) {
 	}
 	return out.String(), nil
 }
-
-func (p *JavaProcessor) isJavaDirective(line string) bool {
-	trimmed := strings.TrimSpace(line)
-	return strings.HasPrefix(trimmed, "// @formatter:") ||
-		strings.HasPrefix(trimmed, "// @SuppressWarnings") ||
-		strings.HasPrefix(trimmed, "//CHECKSTYLE") ||
-		strings.Contains(trimmed, "@SuppressWarnings") ||
-		strings.Contains(trimmed, "CHECKSTYLE.OFF") ||
-		strings.Contains(trimmed, "CHECKSTYLE.ON") ||
-		strings.Contains(trimmed, "NOCHECKSTYLE") ||
-		strings.Contains(trimmed, "NOSONAR") ||
-		strings.Contains(trimmed, "NOFOLINT")
-}
