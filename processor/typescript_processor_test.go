@@ -7,6 +7,11 @@ import (
 )
 
 func TestTypeScriptStripComments(t *testing.T) {
+	t.Run("FileBased", func(t *testing.T) {
+		processor := NewTypeScriptProcessor(true)
+		RunFileBasedTestCaseNormalized(t, processor, "../testdata/typescript/original.ts", "../testdata/typescript/expected.ts")
+	})
+
 	tests := []struct {
 		name     string
 		input    string
@@ -33,18 +38,18 @@ class UserService {
 	}
 }`,
 			expected: `interface User {
-	name: string; 
-	age: number; 
+	name: string;
+	age: number;
 }
 
 class UserService {
-	private users: User[]; 
+	private users: User[];
 	
 	constructor() {
-		this.users = []; 
+		this.users = [];
 	}
 	
-	addUser(user: User): void { 
+	addUser(user: User): void {
 		this.users.push(user);
 	}
 }`,
@@ -77,8 +82,8 @@ function loggingIdentity<T extends WithLength>(arg: T): T {
 }
 
 interface GenericInterface<T> {
-	value: T; 
-	method<U>(arg: U ): U; 
+	value: T;
+	method<U>(arg: U): U;
 }
 
 interface WithLength {
@@ -107,35 +112,36 @@ const fetchUser = async (id: number): Promise<User> => {
 	return await fetchData(); // Placeholder
 }`,
 			expected: `async function fetchData(): Promise<string> {
-	const response = await fetch('https://api.example.com'); 
+	const response = await fetch('https://api.example.com');
 	const data = await response.text();
-	return data; 
+	return data;
 }
 
 const fetchUser = async (id: number): Promise<User> => {
-	return await fetchData(); 
+	return await fetchData();
 }`,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			processor := &TypeScriptProcessor{preserveDirectives: false}
+			processor := NewTypeScriptProcessor(false)
 			result, err := processor.StripComments(tt.input)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, result)
+			expectedNormalized := normalizeText(tt.expected)
+			assert.Equal(t, expectedNormalized, result)
 		})
 	}
 }
 
 func TestTypeScriptProcessorGetLanguageName(t *testing.T) {
-	processor := &TypeScriptProcessor{preserveDirectives: false}
+	processor := NewTypeScriptProcessor(false)
 	assert.Equal(t, "typescript", processor.GetLanguageName())
 }
 
 func TestTypeScriptProcessorPreserveDirectives(t *testing.T) {
-	processorWithDirectives := &TypeScriptProcessor{preserveDirectives: true}
-	processorWithoutDirectives := &TypeScriptProcessor{preserveDirectives: false}
+	processorWithDirectives := NewTypeScriptProcessor(true)
+	processorWithoutDirectives := NewTypeScriptProcessor(false)
 
 	assert.True(t, processorWithDirectives.PreserveDirectives())
 	assert.False(t, processorWithoutDirectives.PreserveDirectives())

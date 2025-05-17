@@ -257,9 +257,9 @@ func TestLanguageParsers(t *testing.T) {
 		{"Rust", newMockProcessor("rust", false), false},
 		{"Bash", newMockProcessor("bash", false), false},
 		{"CSS", newMockProcessor("css", false), false},
-		{"C#", newMockProcessor("csharp", false), true},
-		{"Kotlin", newMockProcessor("kotlin", false), true},
-		{"Swift", newMockProcessor("swift", false), true},
+		{"C#", newMockProcessor("csharp", false), false},
+		{"Kotlin", newMockProcessor("kotlin", false), false},
+		{"Swift", newMockProcessor("swift", false), false},
 		{"Unknown", newMockProcessor("unknown", false), true},
 	}
 

@@ -392,10 +392,16 @@ func main() {
 // +build linux,amd64 linux,arm64
 `
 
-	b.Skip("StripCommentsPreserveDirectives not implemented yet")
+	factory := NewProcessorFactory()
+	factory.SetPreserveDirectives(true) 
+	processor, err := factory.GetProcessor("go")
+	if err != nil {
+		b.Fatalf("Failed to get Go processor: %v", err)
+	}
 
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := GoStripCommentsPreserveDirectives(code)
+		_, err := processor.StripComments(code)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -413,19 +419,32 @@ func main() {
 }
 `
 
-	b.Run("StripComments", func(b *testing.B) {
+	factory := NewProcessorFactory()
+
+	b.Run("StripCommentsNoDirectives", func(b *testing.B) {
+		factory.SetPreserveDirectives(false)
+		processor, err := factory.GetProcessor("go")
+		if err != nil {
+			b.Fatalf("Failed to get Go processor: %v", err)
+		}
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			_, err := StripComments(code)
+			_, err := processor.StripComments(code)
 			if err != nil {
 				b.Fatal(err)
 			}
 		}
 	})
 
-	b.Run("StripCommentsPreserveDirectives", func(b *testing.B) {
-		b.Skip("StripCommentsPreserveDirectives not implemented yet")
+	b.Run("StripCommentsWithDirectives", func(b *testing.B) {
+		factory.SetPreserveDirectives(true)
+		processor, err := factory.GetProcessor("go")
+		if err != nil {
+			b.Fatalf("Failed to get Go processor: %v", err)
+		}
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			_, err := GoStripCommentsPreserveDirectives(code)
+			_, err := processor.StripComments(code)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -447,20 +466,32 @@ func main() {
 	fmt.Println("Hello")  // End of line comment
 }
 `
+	factory := NewProcessorFactory()
 
-	b.Run("StripComments", func(b *testing.B) {
+	b.Run("StripCommentsNoDirectives", func(b *testing.B) {
+		factory.SetPreserveDirectives(false)
+		processor, err := factory.GetProcessor("go")
+		if err != nil {
+			b.Fatalf("Failed to get Go processor: %v", err)
+		}
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			_, err := StripComments(code)
+			_, err := processor.StripComments(code)
 			if err != nil {
 				b.Fatal(err)
 			}
 		}
 	})
 
-	b.Run("StripCommentsPreserveDirectives", func(b *testing.B) {
-		b.Skip("StripCommentsPreserveDirectives not implemented yet")
+	b.Run("StripCommentsWithDirectives", func(b *testing.B) {
+		factory.SetPreserveDirectives(true)
+		processor, err := factory.GetProcessor("go")
+		if err != nil {
+			b.Fatalf("Failed to get Go processor: %v", err)
+		}
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			_, err := GoStripCommentsPreserveDirectives(code)
+			_, err := processor.StripComments(code)
 			if err != nil {
 				b.Fatal(err)
 			}

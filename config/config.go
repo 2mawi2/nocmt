@@ -6,19 +6,20 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 type CommentConfig struct {
-	IgnorePatterns []string `json:"ignorePatterns"`
+	IgnorePatterns     []string `json:"ignorePatterns"`
 	FileIgnorePatterns []string `json:"fileIgnorePatterns"`
 }
 
 type Config struct {
-	Global CommentConfig
-	Local CommentConfig
-	CLIPatterns []string
-	CLIFilePatterns []string
-	compiledPatterns []*regexp.Regexp
+	Global               CommentConfig
+	Local                CommentConfig
+	CLIPatterns          []string
+	CLIFilePatterns      []string
+	compiledPatterns     []*regexp.Regexp
 	compiledFilePatterns []*regexp.Regexp
 }
 
@@ -63,11 +64,38 @@ func (c *Config) ShouldIgnoreFile(filename string) bool {
 		return false
 	}
 
+	filename = filepath.ToSlash(filename)
+
 	for _, pattern := range c.compiledFilePatterns {
 		if pattern.MatchString(filename) {
 			return true
 		}
 	}
+
+	if filepath.IsAbs(filename) {
+		cwd, err := os.Getwd()
+		if err == nil {
+			if rel, err := filepath.Rel(cwd, filename); err == nil {
+				relPath := filepath.ToSlash(rel)
+				for _, pattern := range c.compiledFilePatterns {
+					if pattern.MatchString(relPath) {
+						return true
+					}
+				}
+			}
+		}
+
+		parts := strings.Split(filename, "/")
+		for i := 0; i < len(parts); i++ {
+			tailPath := filepath.ToSlash(strings.Join(parts[len(parts)-i-1:], "/"))
+			for _, pattern := range c.compiledFilePatterns {
+				if pattern.MatchString(tailPath) {
+					return true
+				}
+			}
+		}
+	}
+
 	return false
 }
 

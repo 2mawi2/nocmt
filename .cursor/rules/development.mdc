@@ -1,7 +1,7 @@
 ---
-description:
-globs:
-alwaysApply: false
+description: 
+globs: 
+alwaysApply: true
 ---
 ---
 description: 
@@ -33,6 +33,7 @@ TESTING APPROACH:
 5. Mock external dependencies, not internal code
 6. Use vi.mock to mock external dependencies
 7. Use vitest instead of jest
+
 MAKING CHANGES:
 1. Make one small change at a time
 2. **CRITICAL STEP:** Run tests (`just test`) after EVERY change using your terminal tool. Before calling the tool, state "Running tests to verify changes...". Do not proceed if tests fail.
@@ -42,6 +43,17 @@ MAKING CHANGES:
    - Make a specific plan to fix
    - Try the simplest fix first
 4. Never proceed with new changes while tests are red
+5. When fixing issues, implement proper solutions that handle the general case correctly rather than hardcoding for specific test cases. Focus on understanding the underlying language structure and implement a solution that works for all valid code in that language.
+
+ABSOLUTELY NO HARDCODING OR SPECIAL CASING:
+1. Never implement solutions that rely on detecting specific input patterns for test cases.
+2. Never use hardcoded responses for specific test patterns.
+3. All implementations must be genuinely generic - they must work with any valid input, not just test cases.
+4. Do not use string matching or content detection to determine how to process files differently.
+5. When fixing failing tests, focus on fixing the underlying algorithm rather than making the tests pass through pattern detection.
+6. Be 100% transparent when you're taking shortcuts - never claim a solution is generic when it contains special cases.
+7. Use proper language parsing techniques and data structures rather than hardcoded outputs.
+8. If you cannot create a proper generic solution, explicitly state this and explain the challenges rather than implementing a non-generic solution.
 
 AFTER THE CHANGES:
 1. **IMMEDIATELY run `just test` using you terminal tool**. Do not proceed until tests pass.
@@ -55,6 +67,7 @@ CODE QUALITY:
 3. Don't modify working code unless necessary
 4. Add types and error handling
 5. NEVER EVER add docstrings to the code
+6. NEVER HARDCODE specific requirements in tests or code just to make the tests pass to find a lazy workaround. Always try to solve the issue, by solving it generally with an approach that truly solves the issue for production code.
 
 TESTING RULES:
 1. Tests MUST:

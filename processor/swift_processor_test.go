@@ -7,6 +7,11 @@ import (
 )
 
 func TestSwiftStripComments(t *testing.T) {
+	t.Run("FileBased", func(t *testing.T) {
+		processor := NewSwiftProcessor(true)
+		RunFileBasedTestCaseNormalized(t, processor, "../testdata/swift/original.swift", "../testdata/swift/expected.swift")
+	})
+
 	tests := []struct {
 		name     string
 		input    string
@@ -281,7 +286,7 @@ func debugPrint() {
     }
 }
 `,
-			skip: true, 
+			skip: true,
 		},
 	}
 

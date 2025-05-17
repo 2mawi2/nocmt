@@ -1,22 +1,35 @@
 package processor
 
 import (
-	"fmt"
+	"regexp"
 	"strings"
-
-	sitter "github.com/smacker/go-tree-sitter"
-	"github.com/smacker/go-tree-sitter/java"
 )
 
 type JavaProcessor struct {
-	BaseProcessor
-	preserveDirectives bool
+	*CoreProcessor
+}
+
+func isJavaDirective(line string) bool {
+	trimmed := strings.TrimSpace(line)
+	return strings.HasPrefix(trimmed, "// @formatter:") ||
+		strings.HasPrefix(trimmed, "// @SuppressWarnings") ||
+		strings.HasPrefix(trimmed, "//CHECKSTYLE") ||
+		strings.Contains(trimmed, "@SuppressWarnings") ||
+		strings.Contains(trimmed, "CHECKSTYLE.OFF") ||
+		strings.Contains(trimmed, "CHECKSTYLE.ON") ||
+		strings.Contains(trimmed, "NOCHECKSTYLE") ||
+		strings.Contains(trimmed, "NOSONAR") ||
+		strings.Contains(trimmed, "NOFOLINT")
 }
 
 func NewJavaProcessor(preserveDirectives bool) *JavaProcessor {
-	return &JavaProcessor{
-		preserveDirectives: preserveDirectives,
-	}
+	core := NewCoreProcessor(
+		"java",
+		nil,
+		isJavaDirective,
+		nil,
+	).WithPreserveDirectives(preserveDirectives)
+	return &JavaProcessor{CoreProcessor: core}
 }
 
 func (p *JavaProcessor) GetLanguageName() string {
@@ -28,23 +41,31 @@ func (p *JavaProcessor) PreserveDirectives() bool {
 }
 
 func (p *JavaProcessor) StripComments(source string) (string, error) {
-	parser := sitter.NewParser()
-	parser.SetLanguage(java.GetLanguage())
-
-	if strings.Contains(source, "/*") && !strings.Contains(source, "*/") {
-		return "", fmt.Errorf("unclosed block comment detected")
+	reBlock := regexp.MustCompile(`/\*[\s\S]*?\*/`)
+	text := reBlock.ReplaceAllString(source, "")
+	lines := strings.Split(text, "\n")
+	var out strings.Builder
+	for _, ln := range lines {
+		trimmed := strings.TrimSpace(ln)
+		if strings.HasPrefix(trimmed, "//") {
+			if p.preserveDirectives {
+				if isJavaDirective(ln) {
+					out.WriteString(ln)
+					out.WriteString("\n")
+				} else {
+					out.WriteString("\n")
+				}
+			}
+			continue
+		}
+		if idx := strings.Index(ln, "//"); idx >= 0 {
+			ln = ln[:idx]
+		}
+		ln = strings.TrimRight(ln, " \t")
+		out.WriteString(ln)
+		out.WriteString("\n")
 	}
-
-	if p.preserveDirectives {
-		return stripCommentsPreserveDirectives(source, p.isJavaDirective, parser)
-	}
-
-	commentRanges, err := parseCode(parser, source)
-	if err != nil {
-		return "", err
-	}
-
-	return removeComments(source, commentRanges), nil
+	return out.String(), nil
 }
 
 func (p *JavaProcessor) isJavaDirective(line string) bool {

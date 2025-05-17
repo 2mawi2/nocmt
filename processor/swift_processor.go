@@ -3,17 +3,22 @@ package processor
 import (
 	"fmt"
 	"strings"
+
+	"github.com/smacker/go-tree-sitter/swift"
 )
 
-type SwiftProcessor struct {
-	BaseProcessor
-	preserveDirectives bool
-}
+type SwiftProcessor struct{ *CoreProcessor }
 
 func NewSwiftProcessor(preserveDirectives bool) *SwiftProcessor {
-	return &SwiftProcessor{
-		preserveDirectives: preserveDirectives,
-	}
+	core := NewCoreProcessor(
+		"swift",
+		swift.GetLanguage(),
+		nil,
+		nil,
+	).
+		WithPreserveDirectives(preserveDirectives).
+		PreserveBlankRuns()
+	return &SwiftProcessor{CoreProcessor: core}
 }
 
 func (p *SwiftProcessor) GetLanguageName() string {

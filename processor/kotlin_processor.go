@@ -4,17 +4,31 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/smacker/go-tree-sitter/kotlin"
 )
 
-type KotlinProcessor struct {
-	BaseProcessor
-	preserveDirectives bool
+func postProcessKotlin(src string, _ []CommentRange, _ bool) (string, error) {
+	onlyWS := regexp.MustCompile(`(?m)^[ \t]+\n`)
+	s := onlyWS.ReplaceAllString(src, "\n")
+
+	multiBlank := regexp.MustCompile(`\n(?:[ \t]*\n)+`)
+	s = multiBlank.ReplaceAllString(s, "\n\n")
+
+	return s, nil
 }
 
-func NewKotlinProcessor(preserveDirectives bool) *KotlinProcessor {
-	return &KotlinProcessor{
-		preserveDirectives: preserveDirectives,
-	}
+type KotlinProcessor struct{ *CoreProcessor }
+
+func NewKotlinProcessor(preserve bool) *KotlinProcessor {
+	core := NewCoreProcessor(
+		"kotlin",
+		kotlin.GetLanguage(),
+		isKotlinDirective,
+		postProcessKotlin,
+	).WithPreserveDirectives(preserve)
+
+	return &KotlinProcessor{CoreProcessor: core}
 }
 
 func (p *KotlinProcessor) GetLanguageName() string {
@@ -74,19 +88,12 @@ func (p *KotlinProcessor) StripComments(source string) (string, error) {
 	processedSource = p.restoreStrings(processedSource, stringPlaceholders)
 	processedSource = p.restoreMultilineStrings(processedSource, multilineStringPlaceholders)
 
-	if p.preserveDirectives && len(directiveLines) > 0 {
-		lines := strings.Split(processedSource, "\n")
-
-		for i, directive := range directiveLines {
-			if i < len(lines) {
-				lines[i] = directive
-			}
-		}
-
-		processedSource = strings.Join(lines, "\n")
+	var postErr error
+	processedSource, postErr = postProcessKotlin(
+		processedSource, nil, p.preserveDirectives)
+	if postErr != nil {
+		return "", postErr
 	}
-
-	processedSource = p.cleanEmptyLines(processedSource)
 
 	if shebangLine != "" {
 		processedSource = shebangLine + "\n" + processedSource
@@ -185,21 +192,6 @@ func (p *KotlinProcessor) restoreMultilineStrings(source string, placeholders ma
 		result = strings.ReplaceAll(result, placeholder, original)
 	}
 	return result
-}
-
-func (p *KotlinProcessor) cleanEmptyLines(source string) string {
-	lines := strings.Split(source, "\n")
-	result := make([]string, 0, len(lines))
-
-	for i := 0; i < len(lines); i++ {
-		if i > 0 && strings.TrimSpace(lines[i]) == "" && strings.TrimSpace(lines[i-1]) == "" {
-			continue
-		}
-
-		result = append(result, lines[i])
-	}
-
-	return strings.Join(result, "\n")
 }
 
 func (p *KotlinProcessor) isKotlinDirective(line string) bool {

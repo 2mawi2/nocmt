@@ -48,7 +48,20 @@ func ParseCode(parser *sitter.Parser, source string) ([]CommentRange, error) {
 		return nil, fmt.Errorf("failed to get root node")
 	}
 
+	if rootNode.HasError() {
+		return nil, fmt.Errorf("syntax error in source code (rootNode.HasError() is true)")
+	}
+
 	return findCommentNodes(rootNode, source), nil
+}
+
+func Walk(node *sitter.Node, callback func(*sitter.Node) bool) {
+	if !callback(node) {
+		return
+	}
+	for i := 0; i < int(node.ChildCount()); i++ {
+		Walk(node.Child(i), callback)
+	}
 }
 
 func parseCode(parser *sitter.Parser, source string) ([]CommentRange, error) {
@@ -58,7 +71,12 @@ func parseCode(parser *sitter.Parser, source string) ([]CommentRange, error) {
 func findCommentNodes(node *sitter.Node, source string) []CommentRange {
 	var ranges []CommentRange
 
-	if node.Type() == "comment" || node.Type() == "line_comment" || node.Type() == "block_comment" {
+	switch node.Type() {
+	case "comment", 
+		"line_comment",
+		"block_comment",
+		"documentation_comment", 
+		"doc_comment":           
 		ranges = append(ranges, CommentRange{
 			StartByte: node.StartByte(),
 			EndByte:   node.EndByte(),
@@ -109,126 +127,22 @@ func removeComments(source string, ranges []CommentRange) string {
 		}
 	}
 
-	sourceLines := strings.Split(source, "\n")
-	lineStartOffsets := make([]int, len(sourceLines))
-
-	offset := 0
-	for i := range sourceLines {
-		lineStartOffsets[i] = offset
-		offset += len(sourceLines[i]) + 1
-	}
-
-	commentOnlyLines := make(map[int]bool)
-
+	resultBytes := []byte(source)
 	for _, r := range ranges {
-		startLine := -1
-		endLine := -1
+		start := int(r.StartByte)
+		end := int(r.EndByte)
 
-		for i, startOffset := range lineStartOffsets {
-			endOffset := startOffset + len(sourceLines[i])
-			if int(r.StartByte) >= startOffset && int(r.StartByte) <= endOffset {
-				startLine = i
-				break
-			}
-		}
-
-		for i, startOffset := range lineStartOffsets {
-			endOffset := startOffset + len(sourceLines[i])
-			if int(r.EndByte) >= startOffset && int(r.EndByte) <= endOffset {
-				endLine = i
-				break
-			}
-		}
-
-		if startLine != -1 && endLine != -1 {
-			for line := startLine; line <= endLine; line++ {
-				lineStart := lineStartOffsets[line]
-				lineContent := sourceLines[line]
-
-				trimmed := strings.TrimSpace(lineContent)
-				if trimmed != "" {
-					commentStart := int(r.StartByte) - lineStart
-					commentEnd := int(r.EndByte) - lineStart
-
-					if commentStart < 0 {
-						commentStart = 0
-					}
-					if commentEnd > len(lineContent) {
-						commentEnd = len(lineContent)
-					}
-
-					switch line {
-					case startLine:
-						beforeComment := strings.TrimSpace(lineContent[:commentStart])
-						if beforeComment == "" && line == endLine {
-							afterComment := ""
-							if commentEnd < len(lineContent) {
-								afterComment = strings.TrimSpace(lineContent[commentEnd:])
-							}
-							if afterComment == "" {
-								commentOnlyLines[line] = true
-							}
-						} else if beforeComment == "" && line != endLine {
-							commentOnlyLines[line] = true
-						}
-					case endLine:
-						afterComment := ""
-						if commentEnd < len(lineContent) {
-							afterComment = strings.TrimSpace(lineContent[commentEnd:])
-						}
-						if afterComment == "" {
-							commentOnlyLines[line] = true
-						}
-					default:
-						commentOnlyLines[line] = true
-					}
-				} else {
-					commentOnlyLines[line] = true
-				}
-			}
-		}
-	}
-
-	result := source
-	for _, r := range ranges {
-		if int(r.StartByte) >= len(result) || int(r.EndByte) > len(result) {
+		if start > len(resultBytes) || end > len(resultBytes) || start > end {
 			continue
 		}
 
-		beforeComment := result[:r.StartByte]
-		afterComment := result[r.EndByte:]
-
-		endsWithNewline := false
-		if int(r.EndByte) < len(result) && result[r.EndByte-1] == '\n' {
-			endsWithNewline = true
-		}
-
-		if endsWithNewline {
-			result = beforeComment + "\n" + afterComment
-		} else {
-			result = beforeComment + afterComment
-		}
+		resultBytes = append(resultBytes[:start], resultBytes[end:]...)
 	}
 
-	lines := strings.Split(result, "\n")
-	var cleanedLines []string
-
-	for i, line := range lines {
-		trimmedLine := strings.TrimSpace(line)
-
-		if !commentOnlyLines[i] || trimmedLine != "" {
-			cleanedLines = append(cleanedLines, line)
-		}
-	}
-
-	return strings.Join(cleanedLines, "\n")
+	return string(resultBytes)
 }
 
 func StripCommentsPreserveDirectives(source string, matcher DirectiveMatcher, parser *sitter.Parser) (string, error) {
-	return stripCommentsPreserveDirectives(source, matcher, parser)
-}
-
-func stripCommentsPreserveDirectives(source string, matcher DirectiveMatcher, parser *sitter.Parser) (string, error) {
 	lines := strings.Split(source, "\n")
 	directiveLines := make(map[int]string)
 
@@ -253,15 +167,4 @@ func stripCommentsPreserveDirectives(source string, matcher DirectiveMatcher, pa
 	}
 
 	return strings.Join(strippedLines, "\n"), nil
-}
-
-func (b *BaseProcessor) stripCommentsWithFiltering(source string, parser *sitter.Parser) (string, error) {
-	commentRanges, err := parseCode(parser, source)
-	if err != nil {
-		return "", err
-	}
-
-	commentRanges = b.filterCommentRanges(commentRanges)
-
-	return removeComments(source, commentRanges), nil
 }

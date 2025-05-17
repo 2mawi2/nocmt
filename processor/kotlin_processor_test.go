@@ -7,6 +7,11 @@ import (
 )
 
 func TestKotlinStripComments(t *testing.T) {
+	t.Run("FileBased", func(t *testing.T) {
+		processor := NewKotlinProcessor(true)
+		RunFileBasedTestCaseNormalized(t, processor, "../testdata/kotlin/original.kt", "../testdata/kotlin/expected.kt")
+	})
+
 	tests := []struct {
 		name     string
 		input    string
@@ -44,7 +49,7 @@ fun main() {
 			expected: `package example
 
 fun main() {
-    
+
     println("Hello")
 }`,
 		},
@@ -60,7 +65,7 @@ fun main()  {
 			expected: `package example
 
 fun main()  {
-    
+
     println("Hello")
 }`,
 		},
@@ -131,7 +136,7 @@ fun main() {
     // Comment with smileys 😀🙂😊
     println("Hello")
 }`,
-			skip: true, 
+			skip: true,
 		},
 		{
 			name: "Kotlin specific: nested comments",
@@ -148,7 +153,7 @@ fun main() {
 fun main() {
     println("Hello")
 }`,
-			skip: true, 
+			skip: true,
 		},
 		{
 			name: "Kotlin specific: annotation comment directives",
@@ -311,7 +316,7 @@ package example
 
 // @Suppress("UNUSED_VARIABLE")
 fun main() {
-    
+
     println("Hello")
 }`,
 		},

@@ -33,22 +33,24 @@ if [ -z "$PRE_COMMIT_FRAMEWORK" ]; then
     fi
     
     # Check if nocmt is in PATH, otherwise use the local binary
-    NOCMT_CMD="nocmt"
-    if ! command -v $NOCMT_CMD >/dev/null 2>&1; then
-        echo "Using local nocmt binary..." | tee -a "$LOG_FILE"
-        NOCMT_CMD="./nocmt"
-        if [ ! -x "$NOCMT_CMD" ]; then
+    NOCMT_CMD="./nocmt"
+    if [ ! -x "$NOCMT_CMD" ]; then
+        echo "Using system nocmt binary..." | tee -a "$LOG_FILE"
+        NOCMT_CMD="nocmt"
+        if ! command -v $NOCMT_CMD >/dev/null 2>&1; then
             echo "Error: nocmt not found in PATH or current directory" | tee -a "$LOG_FILE"
             echo "Please build the nocmt binary first or add it to your PATH" | tee -a "$LOG_FILE"
             exit 1
         fi
+    else
+        echo "Using local nocmt binary..." | tee -a "$LOG_FILE"
     fi
     
     echo "Running nocmt to remove comments from staged files..." | tee -a "$LOG_FILE"
     
     # Use the --staged flag to process all staged files at once
-    echo "Running: $NOCMT_CMD --staged" >> "$LOG_FILE"
-    $NOCMT_CMD --staged 2>&1 | tee -a "$LOG_FILE"
+    echo "Running: $NOCMT_CMD --staged --verbose" >> "$LOG_FILE"
+    $NOCMT_CMD --staged --verbose 2>&1 | tee -a "$LOG_FILE"
     
     # Check if nocmt was successful
     if [ ${PIPESTATUS[0]} -ne 0 ]; then

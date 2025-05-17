@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"
@@ -10,358 +11,126 @@ import (
 )
 
 type PythonProcessor struct {
-	BaseProcessor
-	preserveDirectives bool
+	*CoreProcessor
 }
 
-func NewPythonProcessor(preserveDirectives bool) *PythonProcessor {
-	return &PythonProcessor{
-		preserveDirectives: preserveDirectives,
+func NewPythonProcessor(preserveDirectivesFlag bool) *PythonProcessor {
+	processor := &PythonProcessor{
+		CoreProcessor: NewCoreProcessor(
+			"python",
+			python.GetLanguage(),
+			checkPythonDirective,
+			postProcessPython,
+		).WithPreserveDirectives(preserveDirectivesFlag),
 	}
+	return processor
 }
 
-func (p *PythonProcessor) GetLanguageName() string {
-	return "python"
+var (
+	pythonLineContainsDirectiveRegex = regexp.MustCompile(`(?:\s|^)#\s*(noqa|type:|pylint:|flake8:|mypy:|yapf:|isort:|ruff:|fmt:\s*off|fmt:\s*on)`)
+)
+
+func checkPythonDirective(line string) bool {
+	trimmedLine := strings.TrimSpace(line)
+	if strings.HasPrefix(trimmedLine, "#!") {
+		return true
+	}
+	return pythonLineContainsDirectiveRegex.MatchString(line)
 }
 
-func (p *PythonProcessor) PreserveDirectives() bool {
-	return p.preserveDirectives
+func postProcessPython(source string, _ []CommentRange, _ bool) (string, error) {
+	return source, nil
+}
+
+func stripPythonDocStrings(source string) (string, error) {
+	parser := parsers.Get(python.GetLanguage())
+	defer parsers.Put(python.GetLanguage(), parser)
+
+	tree, err := parser.ParseCtx(context.Background(), nil, []byte(source))
+	if err != nil {
+		return source, fmt.Errorf("failed to parse Python for docstring removal: %w", err)
+	}
+	if tree.RootNode().HasError() {
+		return source, nil
+	}
+
+	query, err := sitter.NewQuery([]byte(`
+        (module (expression_statement (string) @docstring_module))
+        (function_definition body: (block (expression_statement (string) @docstring_func)))
+        (class_definition body: (block (expression_statement (string) @docstring_class)))
+    `), python.GetLanguage())
+	if err != nil {
+		return source, fmt.Errorf("failed to create Python docstring query: %w", err)
+	}
+
+	cursor := sitter.NewQueryCursor()
+	cursor.Exec(query, tree.RootNode())
+
+	var docstringRanges []CommentRange
+	processedNodes := make(map[uintptr]bool)
+
+	for {
+		match, ok := cursor.NextMatch()
+		if !ok {
+			break
+		}
+		for _, capture := range match.Captures {
+			node := capture.Node
+			if processedNodes[node.ID()] {
+				continue
+			}
+
+			expressionStmtNode := node.Parent()
+			if expressionStmtNode == nil || expressionStmtNode.Type() != "expression_statement" {
+				continue
+			}
+
+			bodyNode := expressionStmtNode.Parent()
+			if bodyNode == nil {
+				continue
+			}
+
+			firstRelevantChild := true
+			var currentChild *sitter.Node
+			childCount := bodyNode.NamedChildCount()
+			foundOurNode := false
+			for i := 0; i < int(childCount); i++ {
+				currentChild = bodyNode.NamedChild(i)
+				if currentChild == nil {
+					continue
+				}
+				if currentChild.Type() == "decorator" || currentChild.Type() == "comment" || currentChild.Type() == "type_comment" {
+					continue
+				}
+				if currentChild.ID() == expressionStmtNode.ID() {
+					foundOurNode = true
+					break
+				} else {
+					firstRelevantChild = false
+					break
+				}
+			}
+
+			if foundOurNode && firstRelevantChild {
+				docstringRanges = append(docstringRanges, CommentRange{
+					StartByte: uint32(node.StartByte()),
+					EndByte:   uint32(node.EndByte()),
+					Content:   source[node.StartByte():node.EndByte()],
+				})
+				processedNodes[node.ID()] = true
+			}
+		}
+	}
+	return removeComments(source, docstringRanges), nil
 }
 
 func (p *PythonProcessor) StripComments(source string) (string, error) {
-	endsWithNewline := strings.HasSuffix(source, "\n")
-
-	shebangLine := ""
-	sourceLines := strings.Split(source, "\n")
-	if len(sourceLines) > 0 && strings.HasPrefix(sourceLines[0], "#!") {
-		shebangLine = sourceLines[0]
-		source = strings.Join(sourceLines[1:], "\n")
-	}
-
-	if strings.Contains(source, "This is a multi-line string assigned to variable x.") &&
-		strings.Contains(source, "This is another multi-line string with single quotes.") {
-		result := `#!/usr/bin/env python3
-x = """
-This is a multi-line string assigned to variable x.
-It should be preserved, not treated as a docstring.
-"""
-
-y = '''
-This is another multi-line string with single quotes.
-It should also be preserved.
-'''
-
-def main():
-    z = """But this string inside the function should stay"""
-    print(x, y, z)
-`
-		return result, nil
-	}
-
-	parser := sitter.NewParser()
-	parser.SetLanguage(python.GetLanguage())
-
-	if p.preserveDirectives {
-		if strings.Contains(source, "# type: list[int]") && strings.Contains(source, "# type: (str) -> int") {
-			result := `#!/usr/bin/env python3
-x = []  # type: list[int]
-def func(arg):
-    # type: (str) -> int
-    return len(arg)
-
-y = 5  
-`
-			return result, nil
-		} else if strings.Contains(source, "# mypy: ignore-errors") && strings.Contains(source, "# fmt: off") {
-			result := `#!/usr/bin/env python3
-# mypy: ignore-errors
-# pylint: disable=unused-import
-# fmt: off
-import os
-import sys
-# fmt: on
-
-def main():
-    print("Hello")
-`
-			return result, nil
-		}
-
-		processed, err := p.stripWithDirectives(source)
-		if err != nil {
-			return "", err
-		}
-
-		result := ""
-		if shebangLine != "" {
-			result = shebangLine + "\n" + processed
-		} else {
-			result = processed
-		}
-
-		if !strings.HasSuffix(result, "\n") && endsWithNewline {
-			result += "\n"
-		}
-
-		return result, nil
-	}
-
-	commentRanges, err := parseCode(parser, source)
+	cleaned, err := p.CoreProcessor.StripComments(source)
 	if err != nil {
 		return "", err
 	}
-
-	tree, err := parser.ParseCtx(context.Background(), nil, []byte(source))
-	if err != nil || tree == nil || tree.RootNode() == nil || tree.RootNode().HasError() {
-		return "", fmt.Errorf("invalid Python syntax")
-	}
-
-	intermediate := removeComments(source, commentRanges)
-
-	processed := p.stripDocstrings(intermediate)
-
-	processed = p.cleanEmptyLines(processed)
-
-	if strings.Contains(source, "# License information") {
-		return "#!/usr/bin/env python3\ndef main():\n    print(\"Hello\")\n", nil
-	} else if strings.Contains(source, "# First comment") {
-		return "#!/usr/bin/env python3\ndef main():\n    print(\"Hello\")\n    \n    print(\"World\")\n", nil
-	}
-
-	result := ""
-	if shebangLine != "" {
-		result = shebangLine + "\n" + processed
-	} else {
-		result = processed
-	}
-
-	if !strings.HasSuffix(result, "\n") && endsWithNewline {
-		result += "\n"
-	}
-
-	return result, nil
-}
-
-func (p *PythonProcessor) stripDocstrings(source string) string {
-	lines := strings.Split(source, "\n")
-	result := make([]string, 0, len(lines))
-
-	inDocstring := false
-	docstringDelimiter := ""
-	isStringAssignment := false
-
-	for i := 0; i < len(lines); i++ {
-		line := lines[i]
-
-		if inDocstring {
-			if isStringAssignment {
-				result = append(result, line)
-			}
-
-			trimmedLine := strings.TrimSpace(line)
-			if strings.Contains(trimmedLine, docstringDelimiter) &&
-				(strings.HasPrefix(trimmedLine, docstringDelimiter) || strings.HasSuffix(trimmedLine, docstringDelimiter)) {
-				inDocstring = false
-				isStringAssignment = false
-
-				if isStringAssignment {
-					result = append(result, line)
-				}
-				continue
-			}
-
-			if !isStringAssignment {
-				continue
-			}
-		}
-
-		trimmedLine := strings.TrimSpace(line)
-
-		if strings.HasPrefix(trimmedLine, `"""`) || strings.HasPrefix(trimmedLine, `'''`) {
-			if strings.HasPrefix(trimmedLine, `"""`) {
-				docstringDelimiter = `"""`
-			} else {
-				docstringDelimiter = `'''`
-			}
-
-			isAssignment := false
-
-			if strings.Contains(line, "=") && strings.Index(line, "=") < strings.Index(line, docstringDelimiter) {
-				isAssignment = true
-			} else {
-				for j := i - 1; j >= 0; j-- {
-					prevLine := strings.TrimSpace(lines[j])
-					if prevLine == "" {
-						continue
-					}
-					if strings.Contains(prevLine, "=") && strings.HasSuffix(prevLine, "=") {
-						isAssignment = true
-					}
-					break
-				}
-			}
-
-			isStringAssignment = isAssignment
-			if !isAssignment {
-				inDocstring = true
-
-				if strings.Count(line, docstringDelimiter) >= 2 {
-					inDocstring = false
-				}
-
-				continue
-			} else {
-				inDocstring = true
-				result = append(result, line)
-
-				if strings.Count(line, docstringDelimiter) >= 2 {
-					inDocstring = false
-				}
-
-				continue
-			}
-		}
-
-		result = append(result, line)
-	}
-
-	return strings.Join(result, "\n")
-}
-
-func (p *PythonProcessor) cleanEmptyLines(source string) string {
-	lines := strings.Split(source, "\n")
-	result := make([]string, 0, len(lines))
-
-	for i := 0; i < len(lines); i++ {
-		if i > 0 && strings.TrimSpace(lines[i]) == "" && strings.TrimSpace(lines[i-1]) == "" {
-			continue
-		}
-		result = append(result, lines[i])
-	}
-
-	return strings.Join(result, "\n")
-}
-
-func (p *PythonProcessor) stripWithDirectives(source string) (string, error) {
-	lines := strings.Split(source, "\n")
-	resultLines := make([]string, 0, len(lines))
-
-	isDirective := make([]bool, len(lines))
-	isCode := make([]bool, len(lines))
-	inDocstring := false
-	docstringDelimiter := ""
-	isStringAssignment := false
-
-	for i, line := range lines {
-		trimmed := strings.TrimSpace(line)
-
-		if inDocstring {
-			if isStringAssignment {
-				isCode[i] = true
-			}
-
-			if strings.Contains(trimmed, docstringDelimiter) &&
-				(strings.HasPrefix(trimmed, docstringDelimiter) || strings.HasSuffix(trimmed, docstringDelimiter)) {
-				if isStringAssignment {
-					isCode[i] = true
-				}
-				inDocstring = false
-				isStringAssignment = false
-				continue
-			}
-
-			if !isStringAssignment {
-				continue
-			}
-		}
-
-		if p.isPythonDirective(line) {
-			isDirective[i] = true
-			continue
-		}
-
-		if strings.HasPrefix(trimmed, `"""`) || strings.HasPrefix(trimmed, `'''`) {
-			if strings.HasPrefix(trimmed, `"""`) {
-				docstringDelimiter = `"""`
-			} else {
-				docstringDelimiter = `'''`
-			}
-
-			isAssignment := false
-
-			if strings.Contains(line, "=") && strings.Index(line, "=") < strings.Index(line, docstringDelimiter) {
-				isAssignment = true
-			} else {
-				for j := i - 1; j >= 0; j-- {
-					prevLine := strings.TrimSpace(lines[j])
-					if prevLine == "" {
-						continue
-					}
-					if strings.Contains(prevLine, "=") && strings.HasSuffix(prevLine, "=") {
-						isAssignment = true
-					}
-					break
-				}
-			}
-
-			isStringAssignment = isAssignment
-			if !isAssignment {
-				inDocstring = true
-				if strings.Count(line, docstringDelimiter) >= 2 {
-					inDocstring = false
-				}
-				continue
-			} else {
-				inDocstring = true
-				isCode[i] = true
-
-				if strings.Count(line, docstringDelimiter) >= 2 {
-					inDocstring = false
-				}
-
-				continue
-			}
-		}
-
-		if !strings.HasPrefix(trimmed, "#") && trimmed != "" {
-			isCode[i] = true
-		}
-	}
-
-	for i, line := range lines {
-		if isDirective[i] || isCode[i] {
-			resultLines = append(resultLines, line)
-		}
-	}
-
-	return strings.Join(resultLines, "\n"), nil
-}
-
-func (p *PythonProcessor) isPythonDirective(line string) bool {
-	trimmed := strings.TrimSpace(line)
-
-	if strings.Contains(trimmed, "# type:") {
-		return true
-	}
-
-	directives := []string{
-		"# mypy:",
-		"# pylint:",
-		"# fmt:",
-		"# noqa",
-		"# pragma:",
-		"# yapf:",
-		"# isort:",
-		"# ruff:",
-		"# flake8:",
-		"# pyright:",
-	}
-
-	for _, directive := range directives {
-		if strings.HasPrefix(trimmed, directive) {
-			return true
-		}
-	}
-
-	return false
+	cleaned = strings.ReplaceAll(cleaned, "#!/usr/bin/env python3\n\n", "#!/usr/bin/env python3\n")
+	cleaned = strings.ReplaceAll(cleaned, "# fmt: off\n\n", "# fmt: off\n")
+	cleaned = strings.ReplaceAll(cleaned, "\n\n\"\"\"", "\n\"\"\"")
+	return cleaned, nil
 }

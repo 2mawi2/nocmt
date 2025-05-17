@@ -35,78 +35,46 @@ func (p *BashProcessor) StripComments(source string) (string, error) {
 		shebang = lines[0]
 	}
 
-	endsWithNewline := strings.HasSuffix(source, "\n")
-
-	var directiveLines []int
-	if p.preserveDirectives {
-		for i, line := range lines {
-			if p.isBashDirective(line) {
-				directiveLines = append(directiveLines, i)
-			}
-		}
-	}
-
 	parser := sitter.NewParser()
 	parser.SetLanguage(bash.GetLanguage())
-
 	commentRanges, err := parseCode(parser, source)
 	if err != nil {
 		return "", err
 	}
 
-	if p.preserveDirectives && len(directiveLines) > 0 {
-		directiveMap := make(map[int]bool)
-		for _, line := range directiveLines {
-			directiveMap[line] = true
+	var filteredRanges []CommentRange
+	for _, r := range commentRanges {
+		lineIdx := strings.Count(source[:int(r.StartByte)], "\n")
+		if p.preserveDirectives && p.isBashDirective(lines[lineIdx]) {
+			continue
 		}
-
-		lineStartPositions := make([]int, len(lines))
-		pos := 0
-		for i, line := range lines {
-			lineStartPositions[i] = pos
-			pos += len(line) + 1
-		}
-
-		var filteredRanges []CommentRange
-		for _, r := range commentRanges {
-			lineFound := false
-			for i, start := range lineStartPositions {
-				end := start + len(lines[i])
-				if int(r.StartByte) >= start && int(r.StartByte) <= end {
-					if !directiveMap[i] {
-						filteredRanges = append(filteredRanges, r)
-					}
-					lineFound = true
-					break
-				}
-			}
-			if !lineFound {
-				filteredRanges = append(filteredRanges, r)
-			}
-		}
-
-		commentRanges = filteredRanges
+		filteredRanges = append(filteredRanges, r)
 	}
 
-	result := removeComments(source, commentRanges)
-
-	result = strings.TrimSpace(result)
+	result := removeComments(source, filteredRanges)
 
 	resultLines := strings.Split(result, "\n")
-
 	var finalLines []string
-	if shebang != "" {
-		finalLines = append(finalLines, shebang)
+	for i, rl := range resultLines {
+		if i == 0 && shebang != "" {
+			finalLines = append(finalLines, shebang)
+			continue
+		}
+		trimmed := strings.TrimSpace(rl)
+		if trimmed == "" {
+			if i < len(lines) && strings.TrimSpace(lines[i]) == "" {
+				finalLines = append(finalLines, "")
+			}
+			continue
+		}
+		finalLines = append(finalLines, trimmed)
 	}
 
-	finalLines = append(finalLines, resultLines...)
-
-	finalResult := strings.Join(finalLines, "\n")
-	if endsWithNewline && !strings.HasSuffix(finalResult, "\n") {
-		finalResult += "\n"
+	final := strings.Join(finalLines, "\n")
+	if !strings.HasSuffix(final, "\n") {
+		final += "\n"
 	}
-
-	return finalResult, nil
+	return final, nil
 }
 
 func (p *BashProcessor) isBashDirective(line string) bool {

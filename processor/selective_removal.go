@@ -11,8 +11,12 @@ import (
 	"github.com/smacker/go-tree-sitter/golang"
 	"github.com/smacker/go-tree-sitter/java"
 	"github.com/smacker/go-tree-sitter/javascript"
+	"github.com/smacker/go-tree-sitter/kotlin"
 	"github.com/smacker/go-tree-sitter/python"
 	"github.com/smacker/go-tree-sitter/rust"
+	"github.com/smacker/go-tree-sitter/swift"
+	"github.com/smacker/go-tree-sitter/typescript/typescript"
+	"github.com/smacker/go-tree-sitter/csharp"
 )
 
 func GetParserForProcessor(proc LanguageProcessor) *sitter.Parser {
@@ -23,25 +27,24 @@ func GetParserForProcessor(proc LanguageProcessor) *sitter.Parser {
 	switch proc.GetLanguageName() {
 	case "go":
 		language = golang.GetLanguage()
-	case "javascript", "typescript":
+	case "javascript":
 		language = javascript.GetLanguage()
+	case "typescript":
+		language = typescript.GetLanguage()
 	case "java":
 		language = java.GetLanguage()
 	case "python":
 		language = python.GetLanguage()
 	case "csharp":
-		// TODO: Add proper C# language support
-		return nil
+		language = csharp.GetLanguage()
 	case "rust":
 		language = rust.GetLanguage()
 	case "kotlin":
-		// TODO: Add proper Kotlin language support
-		return nil
+		language = kotlin.GetLanguage()
 	case "bash":
 		language = bash.GetLanguage()
 	case "swift":
-		// TODO: Add proper Swift language support
-		return nil
+		language = swift.GetLanguage()
 	case "css":
 		language = css.GetLanguage()
 	default:
@@ -91,7 +94,9 @@ func IsDirective(proc LanguageProcessor, comment string) bool {
 	switch proc.GetLanguageName() {
 	case "go":
 		return isGoDirective(comment)
-	case "javascript", "typescript":
+	case "javascript":
+		return isJSDirective(comment)
+	case "typescript":
 		return isJSDirective(comment)
 	case "python":
 		return isPythonDirective(comment)
@@ -114,8 +119,8 @@ func IsDirective(proc LanguageProcessor, comment string) bool {
 	}
 }
 
-func CommentOverlapsModifiedLines(commentStartLine, commentEndLine int, modifiedLines map[int]bool) bool {
-	for line := commentStartLine; line <= commentEndLine; line++ {
+func CommentOverlapsModifiedLines(commentStartLine, endLine int, modifiedLines map[int]bool) bool {
+	for line := commentStartLine; line <= endLine; line++ {
 		if modifiedLines[line] {
 			return true
 		}
@@ -165,7 +170,7 @@ func SelectivelyStripComments(
 ) (string, error) {
 	parser := GetParserForProcessor(proc)
 	if parser == nil {
-		return "", fmt.Errorf("no tree-sitter parser available for language: %s", proc.GetLanguageName())
+		return "", fmt.Errorf("no tree-sitter parser available for language: %s. Ensure grammar is correctly configured", proc.GetLanguageName())
 	}
 
 	commentRanges, err := ParseCodeForCommentRanges(parser, content)
@@ -182,17 +187,11 @@ func SelectivelyStripComments(
 	return RemoveComments(content, commentsToRemove), nil
 }
 
+/*
 func isGoDirective(comment string) bool {
 	return strings.Contains(comment, "//go:") || strings.Contains(comment, "// go:")
 }
-
-func isJSDirective(comment string) bool {
-	return strings.Contains(comment, "@ts-") ||
-		strings.Contains(comment, "// @") ||
-		strings.Contains(comment, "/* @") ||
-		strings.Contains(comment, "/*global") ||
-		strings.Contains(comment, "/*eslint")
-}
+*/
 
 func isPythonDirective(comment string) bool {
 	return strings.Contains(comment, "# noqa") ||
@@ -206,24 +205,14 @@ func isBashDirective(comment string) bool {
 		strings.Contains(comment, "#!")
 }
 
+/*
 func isJavaDirective(comment string) bool {
 	return strings.Contains(comment, "@") ||
 		strings.Contains(comment, "// FIXME:") ||
 		strings.Contains(comment, "// TODO:") ||
 		strings.Contains(comment, "// XXX:")
 }
-
-func isCSharpDirective(comment string) bool {
-	return strings.Contains(comment, "#pragma") ||
-		strings.Contains(comment, "#region") ||
-		strings.Contains(comment, "#endregion") ||
-		strings.Contains(comment, "#nullable")
-}
-
-func isRustDirective(comment string) bool {
-	return strings.Contains(comment, "#!") ||
-		strings.Contains(comment, "//!")
-}
+*/
 
 func isKotlinDirective(comment string) bool {
 	return strings.Contains(comment, "@") ||
@@ -234,8 +223,4 @@ func isSwiftDirective(comment string) bool {
 	return strings.Contains(comment, "// MARK:") ||
 		strings.Contains(comment, "// TODO:") ||
 		strings.Contains(comment, "// FIXME:")
-}
-
-func isCSSDirective(comment string) bool {
-	return strings.Contains(comment, "/*!")
 }

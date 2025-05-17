@@ -292,6 +292,14 @@ func processStagedFiles(preserveDirectives bool, dryRun bool, verbose bool, comm
 			fmt.Printf("Examining %s...\n", filePath)
 		}
 
+		if commentConfig != nil && commentConfig.ShouldIgnoreFile(filePath) {
+			if verbose {
+				fmt.Printf("Skipping %s: matches file ignore pattern\n", filePath)
+			}
+			skipped++
+			continue
+		}
+
 		proc, err := factory.GetProcessorByExtension(filePath)
 		if err != nil {
 			if verbose {
@@ -389,6 +397,11 @@ func processSingleFile(inputFile string, preserveDirectives bool, commentConfig 
 	factory := processor.NewProcessorFactory()
 	factory.SetPreserveDirectives(preserveDirectives)
 	factory.SetCommentConfig(commentConfig)
+
+	if commentConfig != nil && commentConfig.ShouldIgnoreFile(inputFile) {
+		fmt.Printf("Skipping %s: matches file ignore pattern\n", inputFile)
+		return
+	}
 
 	proc, err := factory.GetProcessorByExtension(inputFile)
 	if err != nil {
