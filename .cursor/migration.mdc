@@ -1,0 +1,87 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Python Processor Migration Notes
+
+## Overview
+
+We successfully migrated the Python processor from a complex implementation that handled both single-line comments and docstrings to a simplified version that focuses solely on single-line comments using the `SingleLineCoreProcessor` base class. This document captures the key aspects of this migration to guide similar efforts for other language processors.
+
+## Migration Steps
+
+1. **Created a new core processor**
+   - Implemented `SingleLineCoreProcessor` that focuses on accurately processing single-line comments
+   - Used Tree-sitter for proper syntax parsing rather than regex-based approaches
+   - Created clear separation of concerns with function callbacks for language-specific behavior
+
+2. **Implemented Python-specific implementation**
+   - Created `PythonSingleProcessor` that extends `SingleLineCoreProcessor`
+   - Defined Python-specific comment identification with `isPythonSingleLineCommentNode`
+   - Added directive detection with `checkPythonSingleLineDirective`
+
+3. **Maintained backwards compatibility**
+   - Kept the original `PythonProcessor` as a thin wrapper around `PythonSingleProcessor`
+   - Ensured all existing API methods continued to work
+   - Redirected functionality to new implementation
+
+4. **Updated factory and registration**
+   - Updated `ProcessorFactory` to use the new implementation
+   - Registered Python file extensions (.py, .pyi, .pyx) to use the new processor
+
+5. **Updated tests**
+   - Updated tests to verify the new implementation behaves correctly
+   - Ensured directive preservation works properly
+   - Confirmed whitespace handling matches expected behavior
+
+6. **Removed docstring-specific code**
+   - Removed the docstring removal functionality
+   - Removed the unused `removeDocstrings` flag from main.go
+   - Simplified test cases to focus on single-line comment handling
+
+## Key Benefits
+
+1. **Simplified implementation**
+   - Focused on single responsibility (single-line comments only)
+   - Leveraged common core processor code
+   - Reduced language-specific code
+
+2. **Improved consistency**
+   - Aligned with the pattern used by other language processors
+   - Better integration with the Tree-sitter parsing approach
+   - Consistent whitespace handling across languages
+
+3. **Better maintainability**
+   - Clearer separation between language-specific and common code
+   - Easier to understand and modify
+   - More consistent test coverage
+
+## Lessons for Other Languages
+
+When migrating other language processors:
+
+1. **Focus on language-specific comment detection**
+   - Implement the correct node identification function
+   - Define proper directive detection for the language
+   - Handle language-specific edge cases
+
+2. **Maintain compatibility**
+   - Consider keeping compatibility wrappers if needed
+   - Ensure all interfaces are still supported
+   - Update factory registration
+
+3. **Test thoroughly**
+   - Verify behavior with real code examples
+   - Test directive preservation
+   - Confirm whitespace handling behaves as expected
+
+4. **Simplify**
+   - Remove unnecessary functionality
+   - Focus on the core responsibility of comment removal
+   - Leverage common code wherever possible
+
+## Next Steps
+
+We should continue this pattern of migration for other language processors, focusing on one language at a time and ensuring all tests pass after each migration.
+

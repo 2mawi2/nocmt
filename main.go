@@ -31,6 +31,7 @@ func main() {
 	var staged bool
 	var all bool
 	var showVersion bool
+	var removeDocstrings bool
 
 	flag.BoolVar(&removeDirectives, "remove-directives", false, "Remove compiler directives (preserved by default)")
 	flag.BoolVar(&removeDirectives, "r", false, "Remove compiler directives (shorthand)")
@@ -51,6 +52,7 @@ func main() {
 	flag.BoolVar(&all, "all", false, "Process all files recursively (be careful with large codebases)")
 	flag.BoolVar(&all, "a", false, "Process all files recursively (shorthand)")
 	flag.BoolVar(&showVersion, "version", false, "Show version information")
+	flag.BoolVar(&removeDocstrings, "remove-docstrings", false, "Remove docstrings (currently Python-specific)")
 	flag.Parse()
 
 	args := flag.Args()

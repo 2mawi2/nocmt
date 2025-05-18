@@ -7,16 +7,14 @@ import (
 
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/bash"
+	"github.com/smacker/go-tree-sitter/csharp"
 	"github.com/smacker/go-tree-sitter/css"
 	"github.com/smacker/go-tree-sitter/golang"
-	"github.com/smacker/go-tree-sitter/java"
 	"github.com/smacker/go-tree-sitter/javascript"
-	"github.com/smacker/go-tree-sitter/kotlin"
 	"github.com/smacker/go-tree-sitter/python"
 	"github.com/smacker/go-tree-sitter/rust"
-	"github.com/smacker/go-tree-sitter/swift"
+	"github.com/smacker/go-tree-sitter/typescript/tsx"
 	"github.com/smacker/go-tree-sitter/typescript/typescript"
-	"github.com/smacker/go-tree-sitter/csharp"
 )
 
 func GetParserForProcessor(proc LanguageProcessor) *sitter.Parser {
@@ -31,20 +29,16 @@ func GetParserForProcessor(proc LanguageProcessor) *sitter.Parser {
 		language = javascript.GetLanguage()
 	case "typescript":
 		language = typescript.GetLanguage()
-	case "java":
-		language = java.GetLanguage()
+	case "tsx":
+		language = tsx.GetLanguage()
 	case "python":
 		language = python.GetLanguage()
 	case "csharp":
 		language = csharp.GetLanguage()
 	case "rust":
 		language = rust.GetLanguage()
-	case "kotlin":
-		language = kotlin.GetLanguage()
 	case "bash":
 		language = bash.GetLanguage()
-	case "swift":
-		language = swift.GetLanguage()
 	case "css":
 		language = css.GetLanguage()
 	default:
@@ -102,16 +96,10 @@ func IsDirective(proc LanguageProcessor, comment string) bool {
 		return isPythonDirective(comment)
 	case "bash":
 		return isBashDirective(comment)
-	case "java":
-		return isJavaDirective(comment)
 	case "csharp":
 		return isCSharpDirective(comment)
 	case "rust":
 		return isRustDirective(comment)
-	case "kotlin":
-		return isKotlinDirective(comment)
-	case "swift":
-		return isSwiftDirective(comment)
 	case "css":
 		return isCSSDirective(comment)
 	default:
@@ -203,24 +191,4 @@ func isPythonDirective(comment string) bool {
 func isBashDirective(comment string) bool {
 	return strings.Contains(comment, "# shellcheck") ||
 		strings.Contains(comment, "#!")
-}
-
-/*
-func isJavaDirective(comment string) bool {
-	return strings.Contains(comment, "@") ||
-		strings.Contains(comment, "// FIXME:") ||
-		strings.Contains(comment, "// TODO:") ||
-		strings.Contains(comment, "// XXX:")
-}
-*/
-
-func isKotlinDirective(comment string) bool {
-	return strings.Contains(comment, "@") ||
-		strings.Contains(comment, "@file:")
-}
-
-func isSwiftDirective(comment string) bool {
-	return strings.Contains(comment, "// MARK:") ||
-		strings.Contains(comment, "// TODO:") ||
-		strings.Contains(comment, "// FIXME:")
 }

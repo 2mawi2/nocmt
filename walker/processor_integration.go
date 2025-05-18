@@ -31,7 +31,6 @@ func NewProcessorIntegration(config ProcessorConfig) *ProcessorIntegration {
 	if config.CommentConfig != nil {
 		factory.SetCommentConfig(config.CommentConfig)
 	}
-
 	return &ProcessorIntegration{
 		factory: factory,
 		config:  config,

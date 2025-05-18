@@ -35,13 +35,11 @@ func NewProcessorFactory() *ProcessorFactory {
 	factory.Register(NewGoProcessor(false))
 	factory.Register(NewJavaScriptProcessor(false))
 	factory.Register(NewTypeScriptProcessor(false))
-	factory.Register(NewJavaProcessor(false))
-	factory.Register(NewPythonProcessor(false))
-	factory.Register(NewCSharpProcessor(false))
+	factory.Register(NewTSXProcessor(false))
+	factory.Register(NewPythonSingleProcessor(false))
+	factory.Register(NewCSharpSingleProcessor(false))
 	factory.Register(NewRustProcessor(false))
-	factory.Register(NewKotlinProcessor(false))
 	factory.Register(NewBashProcessor(false))
-	factory.Register(NewSwiftProcessor(false))
 	factory.Register(NewCSSProcessor(false))
 
 	factory.RegisterConstructor("go", func(preserveDirectives bool) LanguageProcessor {
@@ -53,26 +51,20 @@ func NewProcessorFactory() *ProcessorFactory {
 	factory.RegisterConstructor("typescript", func(preserveDirectives bool) LanguageProcessor {
 		return NewTypeScriptProcessor(preserveDirectives)
 	})
-	factory.RegisterConstructor("java", func(preserveDirectives bool) LanguageProcessor {
-		return NewJavaProcessor(preserveDirectives)
+	factory.RegisterConstructor("tsx", func(preserveDirectives bool) LanguageProcessor {
+		return NewTSXProcessor(preserveDirectives)
 	})
 	factory.RegisterConstructor("python", func(preserveDirectives bool) LanguageProcessor {
-		return NewPythonProcessor(preserveDirectives)
+		return NewPythonSingleProcessor(preserveDirectives)
 	})
 	factory.RegisterConstructor("csharp", func(preserveDirectives bool) LanguageProcessor {
-		return NewCSharpProcessor(preserveDirectives)
+		return NewCSharpSingleProcessor(preserveDirectives)
 	})
 	factory.RegisterConstructor("rust", func(preserveDirectives bool) LanguageProcessor {
 		return NewRustProcessor(preserveDirectives)
 	})
-	factory.RegisterConstructor("kotlin", func(preserveDirectives bool) LanguageProcessor {
-		return NewKotlinProcessor(preserveDirectives)
-	})
 	factory.RegisterConstructor("bash", func(preserveDirectives bool) LanguageProcessor {
 		return NewBashProcessor(preserveDirectives)
-	})
-	factory.RegisterConstructor("swift", func(preserveDirectives bool) LanguageProcessor {
-		return NewSwiftProcessor(preserveDirectives)
 	})
 	factory.RegisterConstructor("css", func(preserveDirectives bool) LanguageProcessor {
 		return NewCSSProcessor(preserveDirectives)
@@ -99,47 +91,39 @@ func (f *ProcessorFactory) RegisterConstructor(language string, constructor func
 
 func (f *ProcessorFactory) GetProcessor(language string) (LanguageProcessor, error) {
 	constructor, ok := f.processorConstructors[language]
+	var processor LanguageProcessor
 	if ok {
-		processor := constructor(f.preserveDirectives)
-		if f.commentConfig != nil {
-			processor.SetCommentConfig(f.commentConfig)
+		processor = constructor(f.preserveDirectives)
+	} else {
+		var ok2 bool
+		processor, ok2 = f.processors[language]
+		if !ok2 {
+			return nil, fmt.Errorf("no processor available for language: %s", language)
 		}
-		return processor, nil
 	}
-
-	processor, ok := f.processors[language]
-	if !ok {
-		return nil, fmt.Errorf("no processor available for language: %s", language)
-	}
-
 	if f.commentConfig != nil {
 		processor.SetCommentConfig(f.commentConfig)
 	}
-
 	return processor, nil
 }
 
 func (f *ProcessorFactory) GetProcessorByExtension(filename string) (LanguageProcessor, error) {
 	extMap := map[string]string{
-		".go":    "go",
-		".js":    "javascript",
-		".jsx":   "javascript",
-		".ts":    "typescript",
-		".tsx":   "typescript",
-		".java":  "java",
-		".py":    "python",
-		".pyi":   "python",
-		".pyx":   "python",
-		".cs":    "csharp",
-		".rs":    "rust",
-		".kt":    "kotlin",
-		".kts":   "kotlin",
-		".swift": "swift",
-		".sh":    "bash",
-		".bash":  "bash",
-		".css":   "css",
-		".scss":  "css",
-		".less":  "css",
+		".go":   "go",
+		".js":   "javascript",
+		".jsx":  "javascript",
+		".ts":   "typescript",
+		".tsx":  "tsx",
+		".py":   "python",
+		".pyi":  "python",
+		".pyx":  "python",
+		".cs":   "csharp",
+		".rs":   "rust",
+		".sh":   "bash",
+		".bash": "bash",
+		".css":  "css",
+		".scss": "css",
+		".less": "css",
 	}
 
 	for ext, lang := range extMap {

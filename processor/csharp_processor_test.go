@@ -7,31 +7,31 @@ import (
 )
 
 func TestCSharpProcessor_FileBased(t *testing.T) {
-	t.Run("WithDirectives", func(t *testing.T) {
-		processor := NewCSharpProcessor(true)
-		RunFileBasedTestCaseNormalized(t, processor, "../testdata/csharp/original.cs", "../testdata/csharp/expected.cs")
+	t.Run("Default_PreserveDirectives", func(t *testing.T) {
+		csharpProc := NewCSharpSingleProcessor(true)
+		RunFileBasedTestCaseNormalized(t, csharpProc, "../testdata/csharp/original.cs", "../testdata/csharp/expected.cs")
 	})
-	t.Run("WithoutDirectives_Simple", func(t *testing.T) {
-		processor := NewCSharpProcessor(false)
+	t.Run("RemoveAll_NoDirectives", func(t *testing.T) {
+		csharpProc := NewCSharpSingleProcessor(false)
 		input := `/// <summary>XML Doc</summary>
 #pragma warning disable CS1591 // A directive
 public class Test {} // A comment`
 		expected := `public class Test {}
-` 
-		actual, err := processor.StripComments(input)
+`
+		actual, err := csharpProc.StripComments(input)
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	})
 }
 
 func TestCSharpProcessorGetLanguageName(t *testing.T) {
-	processor := NewCSharpProcessor(false) 
+	processor := NewCSharpSingleProcessor(false)
 	assert.Equal(t, "csharp", processor.GetLanguageName())
 }
 
 func TestCSharpProcessorPreserveDirectivesFlag(t *testing.T) {
-	processorWithDirectives := NewCSharpProcessor(true)
-	processorWithoutDirectives := NewCSharpProcessor(false)
+	processorWithDirectives := NewCSharpSingleProcessor(true)
+	processorWithoutDirectives := NewCSharpSingleProcessor(false)
 
 	assert.True(t, processorWithDirectives.PreserveDirectives())
 	assert.False(t, processorWithoutDirectives.PreserveDirectives())
@@ -58,7 +58,7 @@ func TestIsCSharpDirective(t *testing.T) {
 		{"Error", "#error This is an error", true},
 		{"Warning", "#warning This is a warning", true},
 		{"StandardComment", "// This is a standard comment", false},
-		{"XmlDocComment", "/// <summary>Test</summary>", false}, 
+		{"XmlDocComment", "/// <summary>Test</summary>", false},
 		{"CodeLine", "var x = 1; // #if DEBUG", false},
 		{"EmptyLine", "", false},
 		{"SpacedDirective", "  #if DEBUG  ", true},
@@ -66,8 +66,7 @@ func TestIsCSharpDirective(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, isCSharpDirective(tt.line))
+			assert.Equal(t, tt.expected, checkCSharpDirective(tt.line))
 		})
 	}
 }
-

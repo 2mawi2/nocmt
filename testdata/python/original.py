@@ -26,6 +26,9 @@ def func(a: int, b: int) -> int:  # trailing comment
 nums = []  # type: list[int]
 
 def main():
+    """
+    This is a docstring that should be removed
+    """
     print(f"Hash in f-string #{len(nums)}")  # comment
 
 # Final line comment 

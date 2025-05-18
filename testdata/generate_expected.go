@@ -14,14 +14,14 @@ func main() {
 	if len(os.Args) != 2 {
 		fmt.Println("Usage: go run generate_expected.go <language>")
 		fmt.Println("       go run generate_expected.go all")
-		fmt.Println("\nAvailable languages: go, javascript, typescript, python, rust, swift, kotlin, css, csharp, bash, java")
+		fmt.Println("\nAvailable languages: go, javascript, typescript, python, rust, css, csharp, bash")
 		os.Exit(1)
 	}
 
 	language := os.Args[1]
 
 	if language == "all" {
-		languages := []string{"go", "javascript", "typescript", "python", "rust", "swift", "kotlin", "css", "csharp", "bash", "java"}
+		languages := []string{"go", "javascript", "typescript", "tsx", "python", "rust", "css", "csharp", "bash"}
 		for _, lang := range languages {
 			if err := processLanguage(lang); err != nil {
 				fmt.Printf("Error processing %s: %v\n", lang, err)
@@ -50,18 +50,15 @@ func processLanguage(language string) error {
 	case "typescript":
 		proc = processor.NewTypeScriptProcessor(true)
 		ext = "ts"
+	case "tsx":
+		proc = processor.NewTSXProcessor(true)
+		ext = "tsx"
 	case "python":
-		proc = processor.NewPythonProcessor(true)
+		proc = processor.NewPythonSingleProcessor(true)
 		ext = "py"
 	case "rust":
 		proc = processor.NewRustProcessor(true)
 		ext = "rs"
-	case "swift":
-		proc = processor.NewSwiftProcessor(true)
-		ext = "swift"
-	case "kotlin":
-		proc = processor.NewKotlinProcessor(true)
-		ext = "kt"
 	case "css":
 		proc = processor.NewCSSProcessor(true)
 		ext = "css"
@@ -71,9 +68,6 @@ func processLanguage(language string) error {
 	case "bash":
 		proc = processor.NewBashProcessor(true)
 		ext = "sh"
-	case "java":
-		proc = processor.NewJavaProcessor(true)
-		ext = "java"
 	default:
 		return fmt.Errorf("unknown language: %s", language)
 	}
