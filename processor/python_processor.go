@@ -14,14 +14,6 @@ func NewPythonProcessor(preserveDirectivesFlag bool) *PythonProcessor {
 	}
 }
 
-func checkPythonDirective(line string) bool {
-	return checkPythonSingleLineDirective(line)
-}
-
-func postProcessPython(source string, _ []CommentRange, _ bool) (string, error) {
-	return source, nil
-}
-
 func (p *PythonProcessor) StripComments(source string) (string, error) {
 	cleaned, err := p.PythonSingleProcessor.StripComments(source)
 	if err != nil {

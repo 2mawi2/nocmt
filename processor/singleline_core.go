@@ -70,10 +70,10 @@ func (p *SingleLineCoreProcessor) StripComments(source string) (string, error) {
 
 	tree, err := parser.ParseCtx(context.Background(), nil, []byte(source))
 	if err != nil {
-		return source, fmt.Errorf("failed to parse source for %s: %w. Source kept.", p.langName, err)
+		return source, fmt.Errorf("failed to parse source for %s: %w", p.langName, err)
 	}
 	if tree == nil || tree.RootNode() == nil || tree.RootNode().HasError() {
-		return source, fmt.Errorf("tree-sitter parsing error for %s, comments not stripped. Source kept.", p.langName)
+		return source, fmt.Errorf("tree-sitter parsing error for %s, comments not stripped", p.langName)
 	}
 	defer tree.Close()
 

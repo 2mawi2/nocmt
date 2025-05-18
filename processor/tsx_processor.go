@@ -63,7 +63,7 @@ func (p *TSXProcessor) StripComments(source string) (string, error) {
 		end := int(cr.EndByte)
 
 		lineStart := strings.LastIndex(source[:start], "\n") + 1
-		lineEnd := end
+		var lineEnd int
 		if nl := strings.Index(source[end:], "\n"); nl >= 0 {
 			lineEnd = end + nl + 1
 		} else {
@@ -117,23 +117,19 @@ func (p *TSXProcessor) StripComments(source string) (string, error) {
 	return normalizeText(clean), nil
 }
 
-
 func postProcessTSX(content string, commentRanges []CommentRange, preserveDirectives bool) (string, error) {
-	
+
 	content, err := postProcessTypeScript(content, commentRanges, preserveDirectives)
 	if err != nil {
 		return "", err
 	}
 
-	
 	emptyJSXCommentRegex := regexp.MustCompile(`{[ \t\r\n]*}`)
 	content = emptyJSXCommentRegex.ReplaceAllString(content, "")
 
-	
 	inlineCommentInTemplateRegex := regexp.MustCompile(`('[^']*'|"[^"]*"|` + "`" + `[^` + "`" + `]*` + "`" + `)[ \t]*//.*`)
 	content = inlineCommentInTemplateRegex.ReplaceAllString(content, "$1")
 
-	
 	malformedClosingRegex := regexp.MustCompile(`(\S+)[ \t]*\);(\s*\})`)
 	content = malformedClosingRegex.ReplaceAllString(content, "$1\n  );$2")
 

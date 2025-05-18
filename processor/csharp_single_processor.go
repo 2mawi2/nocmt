@@ -83,7 +83,7 @@ func postProcessCSharpSingleLine(source string, preserveDirectives bool) (string
 
 	lines := strings.Split(processedSource, "\n")
 	var resultLines []string
-	var prevLineBlank bool = false
+	var prevLineBlank = false
 
 	for i, line := range lines {
 		trimmedLine := strings.TrimSpace(line)
