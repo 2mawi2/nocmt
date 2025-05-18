@@ -44,7 +44,6 @@ func NewTypeScriptProcessor(preserveDirectives bool) *TypeScriptProcessor {
 	return &TypeScriptProcessor{CoreProcessor: core}
 }
 
-
 func (p *TypeScriptProcessor) StripComments(source string) (string, error) {
 	lang := typescript.GetLanguage()
 	parser := parsers.Get(lang)
@@ -63,8 +62,8 @@ func (p *TypeScriptProcessor) StripComments(source string) (string, error) {
 		start := int(cr.StartByte)
 		end := int(cr.EndByte)
 
-		lineStart := strings.LastIndex(source[:start], "\n") + 1 
-		lineEnd := end
+		lineStart := strings.LastIndex(source[:start], "\n") + 1
+		var lineEnd int
 		if nl := strings.Index(source[end:], "\n"); nl >= 0 {
 			lineEnd = end + nl + 1
 		} else {
@@ -74,7 +73,7 @@ func (p *TypeScriptProcessor) StripComments(source string) (string, error) {
 		line := source[lineStart:lineEnd]
 		without := strings.Replace(line, cr.Content, "", 1)
 
-		if strings.TrimSpace(without) == "" { 
+		if strings.TrimSpace(without) == "" {
 			commentRanges[i].StartByte = uint32(lineStart)
 			commentRanges[i].EndByte = uint32(lineEnd)
 		}
