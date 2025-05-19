@@ -47,6 +47,37 @@ echo "Hello"
 			assert.Equal(t, expectedRemoved, result)
 		})
 	})
+
+	t.Run("NoComments_Unchanged", func(t *testing.T) {
+		const noComments = `#!/bin/bash
+		echo "Hello"
+		VAR=1
+		`
+		proc := NewBashProcessor(false)
+		result, err := proc.StripComments(noComments)
+		assert.NoError(t, err)
+		assert.Equal(t, noComments, result)
+		procPreserve := NewBashProcessor(true)
+		resultPreserve, err := procPreserve.StripComments(noComments)
+		assert.NoError(t, err)
+		assert.Equal(t, noComments, resultPreserve)
+	})
+
+	t.Run("IndentationPreserved", func(t *testing.T) {
+		const script = `#!/bin/bash
+# a comment
+    echo "Hello"
+    VAR=1
+`
+		const expected = `#!/bin/bash
+    echo "Hello"
+    VAR=1
+`
+		proc := NewBashProcessor(false)
+		result, err := proc.StripComments(script)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, result)
+	})
 }
 
 func TestBashProcessorGetLanguageName(t *testing.T) {

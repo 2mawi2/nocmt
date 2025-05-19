@@ -45,6 +45,9 @@ func (p *BashProcessor) StripComments(source string) (string, error) {
 	var filteredRanges []CommentRange
 	for _, r := range commentRanges {
 		lineIdx := strings.Count(source[:int(r.StartByte)], "\n")
+		if lineIdx == 0 {
+			continue
+		}
 		if p.preserveDirectives && p.isBashDirective(lines[lineIdx]) {
 			continue
 		}
@@ -64,16 +67,19 @@ func (p *BashProcessor) StripComments(source string) (string, error) {
 			finalLines = append(finalLines, shebang)
 			continue
 		}
-		trimmed := strings.TrimSpace(rl)
+		trimmed := strings.TrimRight(rl, " \t")
 		if trimmed == "" {
 			if i < len(lines) && strings.TrimSpace(lines[i]) == "" {
-				finalLines = append(finalLines, "")
+				finalLines = append(finalLines, rl)
 			}
 			continue
 		}
 		finalLines = append(finalLines, trimmed)
 	}
 
+	for len(finalLines) > 0 && finalLines[len(finalLines)-1] == "" {
+		finalLines = finalLines[:len(finalLines)-1]
+	}
 	final := strings.Join(finalLines, "\n")
 	if !strings.HasSuffix(final, "\n") {
 		final += "\n"
