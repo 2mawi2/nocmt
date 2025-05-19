@@ -18,7 +18,7 @@ package main // comment
 func main(){}`
 		expected := `package main
 func main(){}
-` 
+`
 		actual, err := processor.StripComments(input)
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)
@@ -26,7 +26,7 @@ func main(){}
 }
 
 func TestGoProcessorGetLanguageName(t *testing.T) {
-	processor := NewGoProcessor(false) 
+	processor := NewGoProcessor(false)
 	assert.Equal(t, "go", processor.GetLanguageName())
 }
 
@@ -57,14 +57,13 @@ func TestIsGoDirective(t *testing.T) {
 		{"EmptyComment", "//", false},
 		{"SpacedGoDirective", "  //go:generate echo spaced", true},
 		{"NoSpaceGoDirective", "//go:generate", true},
-		{"MalformedGoDirective", "//go: generate", true},         
-		{"NotADirective", "func main() { //go:fmt off }", false}, 
+		{"MalformedGoDirective", "//go: generate", true},
+		{"NotADirective", "func main() { //go:fmt off }", false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, isGoDirective(tt.line))
+			assert.Equal(t, tt.expected, checkGoDirective(tt.line))
 		})
 	}
 }
-

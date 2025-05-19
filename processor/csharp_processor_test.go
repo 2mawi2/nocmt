@@ -22,6 +22,10 @@ public class Test {} // A comment`
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	})
+	t.Run("No_Line_Artifacts_When_No_Comments", func(t *testing.T) {
+		csharpProc := NewCSharpSingleProcessor(true)
+		RunFileBasedTestCaseNormalized(t, csharpProc, "../testdata/csharp/original_noline_artifacts.cs", "../testdata/csharp/expected_no_line_artifacts.cs")
+	})
 }
 
 func TestCSharpProcessorGetLanguageName(t *testing.T) {

@@ -39,7 +39,7 @@ class UserService {
 }`,
 			expected: `interface User {
 	name: string;
-	age: number;
+	age: number; /* user age */
 }
 
 class UserService {
@@ -83,7 +83,7 @@ function loggingIdentity<T extends WithLength>(arg: T): T {
 
 interface GenericInterface<T> {
 	value: T;
-	method<U>(arg: U): U;
+	method<U>(arg: U /* arg comment */): U;
 }
 
 interface WithLength {
@@ -91,6 +91,7 @@ interface WithLength {
 }
 
 function loggingIdentity<T extends WithLength>(arg: T): T {
+	/* Log the length */
 	console.log(arg.length);
 	return arg;
 }`,
@@ -113,6 +114,7 @@ const fetchUser = async (id: number): Promise<User> => {
 }`,
 			expected: `async function fetchData(): Promise<string> {
 	const response = await fetch('https://api.example.com');
+	/* Processing response */
 	const data = await response.text();
 	return data;
 }

@@ -16,8 +16,9 @@ func TestRustProcessor_FileBased(t *testing.T) {
 		input := `// Regular comment
 #![allow(unused_variables)] // A directive
 fn main() { /* Another comment */ }`
-		expected := `fn main() { }
-` 
+		expected := `#![allow(unused_variables)] // A directive
+fn main() { /* Another comment */ }
+`
 		actual, err := processor.StripComments(input)
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)
@@ -25,7 +26,7 @@ fn main() { /* Another comment */ }`
 }
 
 func TestRustProcessorGetLanguageName(t *testing.T) {
-	processor := NewRustProcessor(false) 
+	processor := NewRustProcessor(false)
 	assert.Equal(t, "rust", processor.GetLanguageName())
 }
 
@@ -48,8 +49,8 @@ func TestIsRustDirective(t *testing.T) {
 		{"SpacedOuterAttribute", "  #[cfg(test)]  ", true},
 		{"SpacedInnerAttribute", "  #![feature(custom_derive)]  ", true},
 		{"RegularLineComment", "// This is a comment", false},
-		{"DocCommentOuter", "/// This is an outer doc comment", false}, 
-		{"DocCommentInner", "//! This is an inner doc comment", false}, 
+		{"DocCommentOuter", "/// This is an outer doc comment", false},
+		{"DocCommentInner", "//! This is an inner doc comment", false},
 		{"CommentWithHashBracket", "// #[not_an_attribute]", false},
 		{"CodeLine", "let x = 5; // #[attribute_in_comment]", false},
 		{"EmptyLine", "", false},
@@ -61,4 +62,3 @@ func TestIsRustDirective(t *testing.T) {
 		})
 	}
 }
-

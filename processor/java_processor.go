@@ -1,12 +1,14 @@
 package processor
 
 import (
-	"regexp"
 	"strings"
+
+	sitter "github.com/smacker/go-tree-sitter"
+	"github.com/smacker/go-tree-sitter/java"
 )
 
 type JavaProcessor struct {
-	*CoreProcessor
+	*SingleLineCoreProcessor
 }
 
 func isJavaDirective(line string) bool {
@@ -23,13 +25,16 @@ func isJavaDirective(line string) bool {
 }
 
 func NewJavaProcessor(preserveDirectives bool) *JavaProcessor {
-	core := NewCoreProcessor(
+	single := NewSingleLineCoreProcessor(
 		"java",
-		nil,
+		java.GetLanguage(),
+		func(node *sitter.Node, src string) bool {
+			return node.Type() == "line_comment"
+		},
 		isJavaDirective,
 		nil,
 	).WithPreserveDirectives(preserveDirectives)
-	return &JavaProcessor{CoreProcessor: core}
+	return &JavaProcessor{SingleLineCoreProcessor: single}
 }
 
 func (p *JavaProcessor) GetLanguageName() string {
@@ -41,29 +46,5 @@ func (p *JavaProcessor) PreserveDirectives() bool {
 }
 
 func (p *JavaProcessor) StripComments(source string) (string, error) {
-	reBlock := regexp.MustCompile(`/\*[\s\S]*?\*/`)
-	text := reBlock.ReplaceAllString(source, "")
-	lines := strings.Split(text, "\n")
-	var out strings.Builder
-	for _, ln := range lines {
-		trimmed := strings.TrimSpace(ln)
-		if strings.HasPrefix(trimmed, "//") {
-			if p.preserveDirectives {
-				if isJavaDirective(ln) {
-					out.WriteString(ln)
-					out.WriteString("\n")
-				} else {
-					out.WriteString("\n")
-				}
-			}
-			continue
-		}
-		if idx := strings.Index(ln, "//"); idx >= 0 {
-			ln = ln[:idx]
-		}
-		ln = strings.TrimRight(ln, " \t")
-		out.WriteString(ln)
-		out.WriteString("\n")
-	}
-	return out.String(), nil
+	return p.SingleLineCoreProcessor.StripComments(source)
 }

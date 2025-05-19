@@ -35,7 +35,6 @@ func NewProcessorFactory() *ProcessorFactory {
 	factory.Register(NewGoProcessor(false))
 	factory.Register(NewJavaScriptProcessor(false))
 	factory.Register(NewTypeScriptProcessor(false))
-	factory.Register(NewTSXProcessor(false))
 	factory.Register(NewPythonSingleProcessor(false))
 	factory.Register(NewCSharpSingleProcessor(false))
 	factory.Register(NewRustProcessor(false))
@@ -50,9 +49,6 @@ func NewProcessorFactory() *ProcessorFactory {
 	})
 	factory.RegisterConstructor("typescript", func(preserveDirectives bool) LanguageProcessor {
 		return NewTypeScriptProcessor(preserveDirectives)
-	})
-	factory.RegisterConstructor("tsx", func(preserveDirectives bool) LanguageProcessor {
-		return NewTSXProcessor(preserveDirectives)
 	})
 	factory.RegisterConstructor("python", func(preserveDirectives bool) LanguageProcessor {
 		return NewPythonSingleProcessor(preserveDirectives)
@@ -113,7 +109,6 @@ func (f *ProcessorFactory) GetProcessorByExtension(filename string) (LanguagePro
 		".js":   "javascript",
 		".jsx":  "javascript",
 		".ts":   "typescript",
-		".tsx":  "tsx",
 		".py":   "python",
 		".pyi":  "python",
 		".pyx":  "python",
@@ -128,6 +123,9 @@ func (f *ProcessorFactory) GetProcessorByExtension(filename string) (LanguagePro
 
 	for ext, lang := range extMap {
 		if strings.HasSuffix(filename, ext) {
+			if ext == ".tsx" {
+				return &noOpProcessor{}, nil
+			}
 			return f.GetProcessor(lang)
 		}
 	}
@@ -139,3 +137,10 @@ func StripComments(source string) (string, error) {
 	processor := NewGoProcessor(false)
 	return processor.StripComments(source)
 }
+
+type noOpProcessor struct{}
+
+func (n *noOpProcessor) StripComments(source string) (string, error) { return source, nil }
+func (n *noOpProcessor) GetLanguageName() string                     { return "tsx" }
+func (n *noOpProcessor) PreserveDirectives() bool                    { return false }
+func (n *noOpProcessor) SetCommentConfig(cfg *config.Config)         {}

@@ -83,7 +83,6 @@ func postProcessCSharpSingleLine(source string, preserveDirectives bool) (string
 
 	lines := strings.Split(processedSource, "\n")
 	var resultLines []string
-	var prevLineBlank = false
 
 	for i, line := range lines {
 		trimmedLine := strings.TrimSpace(line)
@@ -108,13 +107,11 @@ func postProcessCSharpSingleLine(source string, preserveDirectives bool) (string
 		isBlankLine := trimmedLine == ""
 
 		if isBlankLine {
-			if !prevLineBlank && i > 0 {
+			if i > 0 {
 				resultLines = append(resultLines, line)
 			}
-			prevLineBlank = true
 		} else {
 			resultLines = append(resultLines, line)
-			prevLineBlank = false
 		}
 	}
 
@@ -153,7 +150,7 @@ func NewCSharpSingleProcessor(preserveDirectivesFlag bool) *CSharpSingleProcesso
 		isSLCommentNode,
 		checkCSharpDirective,
 		postProcessCSharpSingleLine,
-	).WithPreserveDirectives(preserveDirectivesFlag)
+	).WithPreserveDirectives(preserveDirectivesFlag).PreserveBlankRuns()
 
 	return &CSharpSingleProcessor{
 		SingleLineCoreProcessor: singleLineCore,

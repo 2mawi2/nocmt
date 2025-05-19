@@ -1,25 +1,54 @@
-// @ts-check
-// TypeScript demo file
+/* @license
+ * Example JS library
+ * Copyright 2025
+ */
 
-/// <reference path="./types.d.ts" />
+ // @flow
+// @jsx React.createElement
 
-// Generic interface example
-interface Box<T> {
-	value: T; // inline trailing
+// First comment
+/* Block comment before code */
+
+interface Logger {
+	log(message: string): void;
 }
 
-/* Function with generics */
-function identity<T>(arg: T): T {
-	// inside comment
-	return arg;
+class Greeter {
+	private greeting: string;
+	private logger: Logger;
+
+	constructor(greeting: string, logger: Logger) {
+		this.greeting = greeting;
+		this.logger = logger;
+	}
+
+	greet(name: string): string {
+		const message = `${this.greeting}, ${name}!`;
+		this.logger.log(message); // trailing comment on method
+		return message;
+	}
 }
 
-// Async / await with comments
-const fetchData = async (): Promise<string> => {
-	// Fetching
-	const res = await fetch("https://api.example.com"); /* inline */
-	return await res.text(); // trailing
-};
+function main(): void {
+	// Code line comment
+	const logger: Logger = {
+		log: (msg: string) => {
+			console.log("LOG:", msg); /* inline block */ // twin trailing
+		}
+	};
+	
+	const url: string = "https://example.com/#hash"; // URL inside string
+	const tmpl: string = `Template string with // pseudo-comment
+	and /* block */ markers inside`;          // real trailing comment
 
-// @ts-ignore – must stay
-const bad: number = "not-a-number"; // real comment 
+	const greeter: Greeter = new Greeter("Hello", logger);
+	const names: string[] = ["Alice", "Bob", "Charlie"];
+	names.forEach((name) => {
+		greeter.greet(name);
+	});
+
+	// Directive that must stay
+	//# sourceMappingURL=app.js.map
+}
+
+/* A simple block comment at the end. */ 

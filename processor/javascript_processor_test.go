@@ -13,9 +13,8 @@ func TestJavaScriptProcessor_FileBased(t *testing.T) {
 	})
 	t.Run("WithoutDirectives", func(t *testing.T) {
 		processor := NewJavaScriptProcessor(false)
-		input := `// @license MIT\nconsole.log("hello"); // comment`
-		expected := `console.log("hello");
-` 
+		input := "// @license MIT\nconsole.log(\"hello\"); // comment\n"
+		expected := "console.log(\"hello\");\n"
 		actual, err := processor.StripComments(input)
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)
@@ -23,7 +22,7 @@ func TestJavaScriptProcessor_FileBased(t *testing.T) {
 }
 
 func TestJavaScriptProcessorGetLanguageName(t *testing.T) {
-	processor := NewJavaScriptProcessor(false) 
+	processor := NewJavaScriptProcessor(false)
 	assert.Equal(t, "javascript", processor.GetLanguageName())
 }
 
@@ -63,4 +62,3 @@ func TestIsJSDirective(t *testing.T) {
 		})
 	}
 }
-

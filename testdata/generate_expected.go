@@ -21,7 +21,7 @@ func main() {
 	language := os.Args[1]
 
 	if language == "all" {
-		languages := []string{"go", "javascript", "typescript", "tsx", "python", "rust", "css", "csharp", "bash"}
+		languages := []string{"go", "javascript", "typescript", "python", "rust", "css", "csharp", "bash"}
 		for _, lang := range languages {
 			if err := processLanguage(lang); err != nil {
 				fmt.Printf("Error processing %s: %v\n", lang, err)
@@ -50,9 +50,6 @@ func processLanguage(language string) error {
 	case "typescript":
 		proc = processor.NewTypeScriptProcessor(true)
 		ext = "ts"
-	case "tsx":
-		proc = processor.NewTSXProcessor(true)
-		ext = "tsx"
 	case "python":
 		proc = processor.NewPythonSingleProcessor(true)
 		ext = "py"

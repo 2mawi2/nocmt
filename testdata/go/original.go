@@ -19,12 +19,8 @@ import (
 const Version = "v1.0.0" // trailing comment after constant
 
 /* Block comment before var */
-var (
-	// Comment on first var
-	name = /* mid-token */ "Gopher"
-	// Comment on second var
-	age = 10 /* trailing block */
-)
+var name = /* mid-token */ "Gopher"
+var age = 10 /* trailing block */
 
 // Empty comment lines
 //

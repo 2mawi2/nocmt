@@ -13,8 +13,7 @@ import (
 	"github.com/smacker/go-tree-sitter/javascript"
 	"github.com/smacker/go-tree-sitter/python"
 	"github.com/smacker/go-tree-sitter/rust"
-	"github.com/smacker/go-tree-sitter/typescript/tsx"
-	"github.com/smacker/go-tree-sitter/typescript/typescript"
+	ts "github.com/smacker/go-tree-sitter/typescript/typescript"
 )
 
 func GetParserForProcessor(proc LanguageProcessor) *sitter.Parser {
@@ -28,17 +27,15 @@ func GetParserForProcessor(proc LanguageProcessor) *sitter.Parser {
 	case "javascript":
 		language = javascript.GetLanguage()
 	case "typescript":
-		language = typescript.GetLanguage()
-	case "tsx":
-		language = tsx.GetLanguage()
+		language = ts.GetLanguage()
 	case "python":
 		language = python.GetLanguage()
+	case "bash":
+		language = bash.GetLanguage()
 	case "csharp":
 		language = csharp.GetLanguage()
 	case "rust":
 		language = rust.GetLanguage()
-	case "bash":
-		language = bash.GetLanguage()
 	case "css":
 		language = css.GetLanguage()
 	default:
@@ -87,7 +84,7 @@ func IsDirective(proc LanguageProcessor, comment string) bool {
 
 	switch proc.GetLanguageName() {
 	case "go":
-		return isGoDirective(comment)
+		return checkGoDirective(comment)
 	case "javascript":
 		return isJSDirective(comment)
 	case "typescript":
@@ -99,7 +96,7 @@ func IsDirective(proc LanguageProcessor, comment string) bool {
 	case "csharp":
 		return isCSharpDirective(comment)
 	case "rust":
-		return isRustDirective(comment)
+		return isRustDirectiveSelective(comment)
 	case "css":
 		return isCSSDirective(comment)
 	default:
@@ -175,12 +172,6 @@ func SelectivelyStripComments(
 	return RemoveComments(content, commentsToRemove), nil
 }
 
-/*
-func isGoDirective(comment string) bool {
-	return strings.Contains(comment, "//go:") || strings.Contains(comment, "// go:")
-}
-*/
-
 func isPythonDirective(comment string) bool {
 	return strings.Contains(comment, "# noqa") ||
 		strings.Contains(comment, "# type:") ||
@@ -191,4 +182,9 @@ func isPythonDirective(comment string) bool {
 func isBashDirective(comment string) bool {
 	return strings.Contains(comment, "# shellcheck") ||
 		strings.Contains(comment, "#!")
+}
+
+func isRustDirectiveSelective(comment string) bool {
+	trimmed := strings.TrimSpace(comment)
+	return strings.HasPrefix(trimmed, "#!") || strings.HasPrefix(trimmed, "#[")
 }
