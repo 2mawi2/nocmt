@@ -2,7 +2,6 @@ package processor
 
 import (
 	"nocmt/config"
-	"regexp"
 	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"
@@ -68,12 +67,4 @@ func (p *TypeScriptProcessor) SetCommentConfig(cfg *config.Config) {
 
 func (p *TypeScriptProcessor) StripComments(source string) (string, error) {
 	return p.SingleLineCoreProcessor.StripComments(source)
-}
-
-func postProcessTypeScript(src string, _ []CommentRange, _ bool) (string, error) {
-	reBlank := regexp.MustCompile("\\n(?:[ \\t]*\\n){2,}")
-	s := reBlank.ReplaceAllString(src, "\n\n")
-	reSpaceParen := regexp.MustCompile("\\s+\\)")
-	s = reSpaceParen.ReplaceAllString(s, ")")
-	return s, nil
 }
