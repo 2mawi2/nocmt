@@ -53,6 +53,15 @@ func main() {
 	flag.BoolVar(&showVersion, "version", false, "Show version information")
 	flag.Parse()
 
+	for _, arg := range os.Args[1:] {
+		if arg == "-dry-run" || arg == "-d" {
+			dryRun = true
+		}
+		if arg == "-remove-directives" || arg == "-r" {
+			removeDirectives = true
+		}
+	}
+
 	args := flag.Args()
 	if len(args) > 0 && args[0] == "install-hooks" {
 		err := InstallPreCommitHook(verbose)
@@ -183,7 +192,7 @@ func main() {
 		}
 
 		if !fileInfo.IsDir() {
-			processSingleFile(inputPath, preserveDirectives, commentConfig)
+			processSingleFile(inputPath, preserveDirectives, dryRun, commentConfig)
 			return
 		}
 
@@ -393,7 +402,7 @@ func processFileWithSelectiveCommentRemoval(content string, filePath string, pro
 	return processor.SelectivelyStripComments(content, filePath, proc, modifiedLines, preserveDirectives, commentConfig)
 }
 
-func processSingleFile(inputFile string, preserveDirectives bool, commentConfig *config.Config) {
+func processSingleFile(inputFile string, preserveDirectives bool, dryRun bool, commentConfig *config.Config) {
 	factory := processor.NewProcessorFactory()
 	factory.SetPreserveDirectives(preserveDirectives)
 	factory.SetCommentConfig(commentConfig)
@@ -431,7 +440,15 @@ func processSingleFile(inputFile string, preserveDirectives bool, commentConfig 
 		os.Exit(1)
 	}
 
-	fmt.Println(result)
+	if dryRun {
+		fmt.Println(result)
+	} else {
+		err = os.WriteFile(inputFile, []byte(result), 0644)
+		if err != nil {
+			fmt.Printf("Error writing file %s: %v\n", inputFile, err)
+			os.Exit(1)
+		}
+	}
 }
 
 func processDirectory(dirPath string, preserveDirectives bool, dryRun bool, verbose bool, force bool, commentConfig *config.Config) {

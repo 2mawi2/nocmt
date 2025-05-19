@@ -143,8 +143,6 @@ func TestFunc() {
 }
 
 func TestIgnorePatternFlag(t *testing.T) {
-	t.Skip("Skipping TestIgnorePatternFlag as it requires complex setup")
-
 	tempDir, err := os.MkdirTemp("", "nocmt-ignore-pattern-test")
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
@@ -271,8 +269,6 @@ func TestFunc() {
 }
 
 func TestRemoveDirectivesFlag(t *testing.T) {
-	t.Skip("Skipping TestRemoveDirectivesFlag as it requires complex setup")
-
 	tempDir, err := os.MkdirTemp("", "nocmt-remove-directives-test")
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
