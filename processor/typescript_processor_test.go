@@ -28,11 +28,11 @@ interface User {
 // TypeScript class with type annotations
 class UserService {
 	private users: User[]; // array of users
-	
+
 	constructor() {
 		this.users = []; // initialize empty array
 	}
-	
+
 	addUser(user: User): void { // add user method
 		this.users.push(user);
 	}
@@ -44,11 +44,11 @@ class UserService {
 
 class UserService {
 	private users: User[];
-	
+
 	constructor() {
 		this.users = [];
 	}
-	
+
 	addUser(user: User): void {
 		this.users.push(user);
 	}

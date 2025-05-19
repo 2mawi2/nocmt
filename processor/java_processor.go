@@ -46,5 +46,9 @@ func (p *JavaProcessor) PreserveDirectives() bool {
 }
 
 func (p *JavaProcessor) StripComments(source string) (string, error) {
-	return p.SingleLineCoreProcessor.StripComments(source)
+	cleaned, err := p.SingleLineCoreProcessor.StripComments(source)
+	if cleaned == source {
+		return source, nil
+	}
+	return cleaned, err
 }

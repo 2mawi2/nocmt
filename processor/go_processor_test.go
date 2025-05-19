@@ -23,6 +23,10 @@ func main(){}
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	})
+	t.Run("No_Line_Artifacts_Strict", func(t *testing.T) {
+		processor := NewGoProcessor(true)
+		RunFileBasedTestCase(t, processor, "../testdata/go/original_no_line_artifacts.go", "../testdata/go/expected_no_line_artifacts.go")
+	})
 }
 
 func TestGoProcessorGetLanguageName(t *testing.T) {

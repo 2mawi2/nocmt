@@ -51,6 +51,10 @@ func (p *BashProcessor) StripComments(source string) (string, error) {
 		filteredRanges = append(filteredRanges, r)
 	}
 
+	if len(filteredRanges) == 0 {
+		return source, nil
+	}
+
 	result := removeComments(source, filteredRanges)
 
 	resultLines := strings.Split(result, "\n")

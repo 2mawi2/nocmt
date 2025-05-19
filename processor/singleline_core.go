@@ -189,6 +189,10 @@ func (p *SingleLineCoreProcessor) StripComments(source string) (string, error) {
 
 	cleaned = string(resultBytes)
 
+	if len(rangesToModify) == 0 {
+		return source, nil
+	}
+
 	if p.postProcess != nil {
 		var errPostProcess error
 		cleaned, errPostProcess = p.postProcess(cleaned, p.preserveDirectives)

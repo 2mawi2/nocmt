@@ -19,6 +19,9 @@ func (p *PythonProcessor) StripComments(source string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if cleaned == source {
+		return source, nil
+	}
 	cleaned = strings.ReplaceAll(cleaned, "#!/usr/bin/env python3\n\n", "#!/usr/bin/env python3\n")
 	cleaned = strings.ReplaceAll(cleaned, "# fmt: off\n\n", "# fmt: off\n")
 	cleaned = strings.ReplaceAll(cleaned, "\n\n\"\"\"", "\n\"\"\"")

@@ -38,6 +38,9 @@ func (p *CSSProcessor) StripComments(source string) (string, error) {
 		return "", fmt.Errorf("syntax error: unterminated comment")
 	}
 	re := regexp.MustCompile(`/\*[\s\S]*?\*/`)
+	if !re.MatchString(source) {
+		return source, nil
+	}
 	stripped := re.ReplaceAllString(source, "")
 	return normalizeText(stripped), nil
 }
