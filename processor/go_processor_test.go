@@ -12,7 +12,9 @@ func TestGoProcessor_FileBased(t *testing.T) {
 		RunFileBasedTestCaseNormalized(t, processor, "../testdata/go/original.go", "../testdata/go/expected.go")
 	})
 	t.Run("WithoutDirectives_Simple", func(t *testing.T) {
-		processor := NewGoProcessor(false)
+		factory := NewProcessorFactory()
+		processor, err := factory.GetProcessor("go")
+		assert.NoError(t, err)
 		input := `//go:generate echo "hello"
 package main // comment
 func main(){}`

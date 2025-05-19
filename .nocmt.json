@@ -1,6 +1,5 @@
 {
   "ignorePatterns": [
-    "TODO",
     "^\\s*//\\s*WHY",
     "TODO"
   ],

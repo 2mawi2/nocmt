@@ -78,8 +78,13 @@ func main() {
 
 	for _, bm := range benchmarks {
 		b.Run(bm.name, func(b *testing.B) {
+			factory := NewProcessorFactory()
+			processor, err := factory.GetProcessor("go")
+			if err != nil {
+				b.Fatal(err)
+			}
 			for i := 0; i < b.N; i++ {
-				_, err := StripComments(bm.code)
+				_, err := processor.StripComments(bm.code)
 				if err != nil {
 					b.Fatal(err)
 				}
@@ -230,7 +235,12 @@ func BenchmarkGoRealWorldCode(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := StripComments(realWorldCode)
+		factory := NewProcessorFactory()
+		processor, err := factory.GetProcessor("go")
+		if err != nil {
+			b.Fatal(err)
+		}
+		_, err = processor.StripComments(realWorldCode)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -364,7 +374,12 @@ type Config struct {
 			sample := samples[i%len(samples)]
 			i++
 
-			_, err := StripComments(sample)
+			factory := NewProcessorFactory()
+			processor, err := factory.GetProcessor("go")
+			if err != nil {
+				b.Fatal(err)
+			}
+			_, err = processor.StripComments(sample)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -393,7 +408,7 @@ func main() {
 `
 
 	factory := NewProcessorFactory()
-	factory.SetPreserveDirectives(true) 
+	factory.SetPreserveDirectives(true)
 	processor, err := factory.GetProcessor("go")
 	if err != nil {
 		b.Fatalf("Failed to get Go processor: %v", err)
@@ -627,7 +642,12 @@ func main() {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := StripComments(code)
+		factory := NewProcessorFactory()
+		processor, err := factory.GetProcessor("go")
+		if err != nil {
+			b.Fatal(err)
+		}
+		_, err = processor.StripComments(code)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -651,7 +671,12 @@ func BenchmarkGoFileIO(b *testing.B) {
 				b.Fatal(err)
 			}
 
-			processed, err := StripComments(string(content))
+			factory := NewProcessorFactory()
+			processor, err := factory.GetProcessor("go")
+			if err != nil {
+				b.Fatal(err)
+			}
+			processed, err := processor.StripComments(string(content))
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -779,7 +804,12 @@ func main() {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := StripComments(code)
+		factory := NewProcessorFactory()
+		processor, err := factory.GetProcessor("go")
+		if err != nil {
+			b.Fatal(err)
+		}
+		_, err = processor.StripComments(code)
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -3,7 +3,9 @@ package processor
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
+	"sync"
 
 	"nocmt/config"
 
@@ -169,7 +171,6 @@ func StripCommentsPreserveDirectives(source string, matcher DirectiveMatcher, pa
 	return strings.Join(strippedLines, "\n"), nil
 }
 
-
 func PreserveOriginalTrailingNewline(original, cleaned string) string {
 	originalHadTrailing := strings.HasSuffix(original, "\n")
 	if !originalHadTrailing && strings.HasSuffix(cleaned, "\n") {
@@ -179,4 +180,93 @@ func PreserveOriginalTrailingNewline(original, cleaned string) string {
 		return cleaned + "\n"
 	}
 	return cleaned
+}
+
+func splitIntoLines(s string) []string {
+	return lineRegexp.Split(s, -1)
+}
+
+func calculateLinePositions(lines []string) []int {
+	positions := make([]int, len(lines))
+	pos := 0
+	for i, line := range lines {
+		positions[i] = pos
+		pos += len(line) + 1
+	}
+	return positions
+}
+
+var lineRegexp = regexp.MustCompile(`\r?\n`)
+
+func normalizeText(s string) string {
+	s = strings.ReplaceAll(s, "\r\n", "\n")
+	lines := strings.Split(s, "\n")
+	trimmedLines := make([]string, 0, len(lines))
+	for _, line := range lines {
+		trimmedLines = append(trimmedLines, strings.TrimRight(line, " \t"))
+	}
+	s = strings.Join(trimmedLines, "\n")
+
+	s = regexp.MustCompile(`\n{3,}`).ReplaceAllString(s, "\n\n")
+
+	s = regexp.MustCompile(`^\n+`).ReplaceAllString(s, "")
+
+	s = regexp.MustCompile(`\n+$`).ReplaceAllString(s, "")
+
+	if s != "" {
+		s += "\n"
+	}
+	return s
+}
+
+func normalizeTextKeepBlankRuns(s string) string {
+	s = strings.ReplaceAll(s, "\r\n", "\n")
+
+	lines := strings.Split(s, "\n")
+	for i, ln := range lines {
+		lines[i] = strings.TrimRight(ln, " \t")
+	}
+	s = strings.Join(lines, "\n")
+
+	if s != "" && !strings.HasSuffix(s, "\n") {
+		s += "\n"
+	}
+	return s
+}
+
+type ParserPoolType struct {
+	sync.Mutex
+	parsers map[*sitter.Language]*sync.Pool
+}
+
+var parsers = &ParserPoolType{
+	parsers: make(map[*sitter.Language]*sync.Pool),
+}
+
+func (p *ParserPoolType) Get(lang *sitter.Language) *sitter.Parser {
+	p.Lock()
+	defer p.Unlock()
+
+	pool, exists := p.parsers[lang]
+	if !exists {
+		pool = &sync.Pool{
+			New: func() interface{} {
+				parser := sitter.NewParser()
+				parser.SetLanguage(lang)
+				return parser
+			},
+		}
+		p.parsers[lang] = pool
+	}
+
+	return pool.Get().(*sitter.Parser)
+}
+
+func (p *ParserPoolType) Put(lang *sitter.Language, parser *sitter.Parser) {
+	p.Lock()
+	defer p.Unlock()
+
+	if pool, exists := p.parsers[lang]; exists {
+		pool.Put(parser)
+	}
 }

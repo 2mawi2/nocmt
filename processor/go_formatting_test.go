@@ -213,7 +213,10 @@ func main() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := StripComments(tt.input)
+			factory := NewProcessorFactory()
+			processor, err := factory.GetProcessor("go")
+			assert.NoError(t, err)
+			result, err := processor.StripComments(tt.input)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, result)
 		})

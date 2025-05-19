@@ -134,8 +134,7 @@ func (f *ProcessorFactory) GetProcessorByExtension(filename string) (LanguagePro
 }
 
 func StripComments(source string) (string, error) {
-	processor := NewGoProcessor(false)
-	return processor.StripComments(source)
+	panic("StripComments is deprecated. Use ProcessorFactory to obtain a language-specific processor.")
 }
 
 type noOpProcessor struct{}

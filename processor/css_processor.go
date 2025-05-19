@@ -2,10 +2,9 @@ package processor
 
 import (
 	"fmt"
+	"nocmt/config"
 	"regexp"
 	"strings"
-
-	smkcss "github.com/smacker/go-tree-sitter/css"
 )
 
 func isCSSDirective(line string) bool {
@@ -17,20 +16,11 @@ func postProcessCSS(source string, _ []CommentRange, preserveDirectives bool) (s
 }
 
 type CSSProcessor struct {
-	*CoreProcessor
+	preserveDirectives bool
 }
 
 func NewCSSProcessor(preserveDirectives bool) *CSSProcessor {
-	core := NewCoreProcessor(
-		"css",
-		smkcss.GetLanguage(),
-		isCSSDirective,
-		postProcessCSS,
-	)
-	core.WithPreserveDirectives(preserveDirectives)
-	return &CSSProcessor{
-		CoreProcessor: core,
-	}
+	return &CSSProcessor{preserveDirectives: preserveDirectives}
 }
 
 func (p *CSSProcessor) StripComments(source string) (string, error) {
@@ -45,3 +35,13 @@ func (p *CSSProcessor) StripComments(source string) (string, error) {
 	cleaned := normalizeText(stripped)
 	return PreserveOriginalTrailingNewline(source, cleaned), nil
 }
+
+func (p *CSSProcessor) GetLanguageName() string {
+	return "css"
+}
+
+func (p *CSSProcessor) PreserveDirectives() bool {
+	return p.preserveDirectives
+}
+
+func (p *CSSProcessor) SetCommentConfig(cfg *config.Config) {}
