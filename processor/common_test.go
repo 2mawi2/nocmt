@@ -3,6 +3,8 @@ package processor
 import (
 	"nocmt/config"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBaseProcessorCommentFiltering(t *testing.T) {
@@ -113,4 +115,31 @@ func TestFilterCommentRanges(t *testing.T) {
 	if len(filtered) > 0 && filtered[0].Content != "// Regular comment" {
 		t.Errorf("Expected to keep regular comment, got %s", filtered[0].Content)
 	}
+}
+
+func TestPreserveOriginalTrailingNewline(t *testing.T) {
+	t.Run("Preserve when original has trailing newline", func(t *testing.T) {
+		orig := "foo\nbar\n"
+		clean := "foo\nbar\n"
+		result := PreserveOriginalTrailingNewline(orig, clean)
+		assert.Equal(t, clean, result)
+	})
+	t.Run("Remove when original has no trailing newline", func(t *testing.T) {
+		orig := "foo\nbar"
+		clean := "foo\nbar\n"
+		result := PreserveOriginalTrailingNewline(orig, clean)
+		assert.Equal(t, "foo\nbar", result)
+	})
+	t.Run("Add when cleaned missing trailing newline but original had it", func(t *testing.T) {
+		orig := "foo\nbar\n"
+		clean := "foo\nbar"
+		result := PreserveOriginalTrailingNewline(orig, clean)
+		assert.Equal(t, "foo\nbar\n", result)
+	})
+	t.Run("No change when both have no trailing newline", func(t *testing.T) {
+		orig := "foo\nbar"
+		clean := "foo\nbar"
+		result := PreserveOriginalTrailingNewline(orig, clean)
+		assert.Equal(t, "foo\nbar", result)
+	})
 }

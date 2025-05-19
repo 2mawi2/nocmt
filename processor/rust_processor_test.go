@@ -17,8 +17,7 @@ func TestRustProcessor_FileBased(t *testing.T) {
 #![allow(unused_variables)] // A directive
 fn main() { /* Another comment */ }`
 		expected := `#![allow(unused_variables)] // A directive
-fn main() { /* Another comment */ }
-`
+fn main() { /* Another comment */ }`
 		actual, err := processor.StripComments(input)
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)

@@ -72,11 +72,11 @@ func findCommentNodes(node *sitter.Node, source string) []CommentRange {
 	var ranges []CommentRange
 
 	switch node.Type() {
-	case "comment", 
+	case "comment",
 		"line_comment",
 		"block_comment",
-		"documentation_comment", 
-		"doc_comment":           
+		"documentation_comment",
+		"doc_comment":
 		ranges = append(ranges, CommentRange{
 			StartByte: node.StartByte(),
 			EndByte:   node.EndByte(),
@@ -167,4 +167,16 @@ func StripCommentsPreserveDirectives(source string, matcher DirectiveMatcher, pa
 	}
 
 	return strings.Join(strippedLines, "\n"), nil
+}
+
+
+func PreserveOriginalTrailingNewline(original, cleaned string) string {
+	originalHadTrailing := strings.HasSuffix(original, "\n")
+	if !originalHadTrailing && strings.HasSuffix(cleaned, "\n") {
+		return strings.TrimSuffix(cleaned, "\n")
+	}
+	if originalHadTrailing && !strings.HasSuffix(cleaned, "\n") {
+		return cleaned + "\n"
+	}
+	return cleaned
 }

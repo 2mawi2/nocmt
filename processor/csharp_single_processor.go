@@ -156,3 +156,12 @@ func NewCSharpSingleProcessor(preserveDirectivesFlag bool) *CSharpSingleProcesso
 		SingleLineCoreProcessor: singleLineCore,
 	}
 }
+
+
+func (p *CSharpSingleProcessor) StripComments(source string) (string, error) {
+	cleaned, err := p.SingleLineCoreProcessor.StripComments(source)
+	if err != nil {
+		return "", err
+	}
+	return PreserveOriginalTrailingNewline(source, cleaned), nil
+}

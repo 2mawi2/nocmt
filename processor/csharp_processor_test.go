@@ -16,8 +16,7 @@ func TestCSharpProcessor_FileBased(t *testing.T) {
 		input := `/// <summary>XML Doc</summary>
 #pragma warning disable CS1591 // A directive
 public class Test {} // A comment`
-		expected := `public class Test {}
-`
+		expected := `public class Test {}`
 		actual, err := csharpProc.StripComments(input)
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)
@@ -25,6 +24,35 @@ public class Test {} // A comment`
 	t.Run("No_Line_Artifacts_When_No_Comments", func(t *testing.T) {
 		csharpProc := NewCSharpSingleProcessor(true)
 		RunFileBasedTestCaseNormalized(t, csharpProc, "../testdata/csharp/original_noline_artifacts.cs", "../testdata/csharp/expected_no_line_artifacts.cs")
+	})
+	t.Run("BlockCommentsPreserved", func(t *testing.T) {
+		proc := NewCSharpSingleProcessor(false)
+		input := "/* Block comment */\npublic class C {}\n"
+		actual, err := proc.StripComments(input)
+		assert.NoError(t, err)
+		assert.Equal(t, input, actual)
+	})
+	t.Run("PreserveExistingTrailingNewline", func(t *testing.T) {
+		proc := NewCSharpSingleProcessor(false)
+		input := "public class C {}\n"
+		actual, err := proc.StripComments(input)
+		assert.NoError(t, err)
+		assert.Equal(t, input, actual)
+	})
+	t.Run("NoTrailingNewlineAdded", func(t *testing.T) {
+		proc := NewCSharpSingleProcessor(false)
+		input := "public class C {}"
+		actual, err := proc.StripComments(input)
+		assert.NoError(t, err)
+		assert.Equal(t, input, actual)
+	})
+	t.Run("PreserveTrailingNewlineOnRemoval_NoNewline", func(t *testing.T) {
+		proc := NewCSharpSingleProcessor(false)
+		input := "namespace X {\n    class C { } // comment\n}" 
+		expected := "namespace X {\n    class C { }\n}"         
+		actual, err := proc.StripComments(input)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, actual)
 	})
 }
 

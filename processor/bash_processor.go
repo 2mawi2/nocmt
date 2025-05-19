@@ -78,7 +78,7 @@ func (p *BashProcessor) StripComments(source string) (string, error) {
 	if !strings.HasSuffix(final, "\n") {
 		final += "\n"
 	}
-	return final, nil
+	return PreserveOriginalTrailingNewline(source, final), nil
 }
 
 func (p *BashProcessor) isBashDirective(line string) bool {

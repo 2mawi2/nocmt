@@ -42,5 +42,6 @@ func (p *CSSProcessor) StripComments(source string) (string, error) {
 		return source, nil
 	}
 	stripped := re.ReplaceAllString(source, "")
-	return normalizeText(stripped), nil
+	cleaned := normalizeText(stripped)
+	return PreserveOriginalTrailingNewline(source, cleaned), nil
 }

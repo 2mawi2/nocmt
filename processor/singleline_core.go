@@ -206,6 +206,5 @@ func (p *SingleLineCoreProcessor) StripComments(source string) (string, error) {
 	} else {
 		cleaned = normalizeText(cleaned)
 	}
-
 	return cleaned, nil
 }

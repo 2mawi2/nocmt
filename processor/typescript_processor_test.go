@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -130,7 +131,7 @@ const fetchUser = async (id: number): Promise<User> => {
 			processor := NewTypeScriptProcessor(false)
 			result, err := processor.StripComments(tt.input)
 			assert.NoError(t, err)
-			expectedNormalized := normalizeText(tt.expected)
+			expectedNormalized := strings.TrimSuffix(normalizeText(tt.expected), "\n")
 			assert.Equal(t, expectedNormalized, result)
 		})
 	}
