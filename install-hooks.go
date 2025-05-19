@@ -1,12 +1,16 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
+
+//go:embed pre-commit
+var preCommitHookContent []byte
 
 func InstallPreCommitHook(verbose bool) error {
 	if !isGitRepo() {
@@ -40,17 +44,7 @@ func InstallPreCommitHook(verbose bool) error {
 		}
 	}
 
-	execPath, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("failed to get executable path: %w", err)
-	}
-
-	hook := "#!/bin/sh\n\n"
-	hook += "# Run nocmt on staged files\n"
-	hook += execPath + " --staged\n\n"
-	hook += "exit 0\n"
-
-	err = os.WriteFile(hookPath, []byte(hook), 0755)
+	err = os.WriteFile(hookPath, preCommitHookContent, 0755)
 	if err != nil {
 		return fmt.Errorf("failed to write hook file: %w", err)
 	}
