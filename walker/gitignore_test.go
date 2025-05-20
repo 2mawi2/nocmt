@@ -336,3 +336,130 @@ func TestDefaultIgnorePatternsBehavior(t *testing.T) {
 		}
 	}
 }
+
+func TestNestedNegationsAndPrecedence(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "nested-negation-test")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+	if err := os.WriteFile(filepath.Join(tempDir, ".gitignore"), []byte("*.txt\n"), 0644); err != nil {
+		t.Fatalf("Failed to write root .gitignore: %v", err)
+	}
+	level1 := filepath.Join(tempDir, "level1")
+	if err := os.MkdirAll(level1, 0755); err != nil {
+		t.Fatalf("Failed to create level1 dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(level1, ".gitignore"), []byte("!foo.txt\n"), 0644); err != nil {
+		t.Fatalf("Failed to write level1 .gitignore: %v", err)
+	}
+	cases := []struct {
+		path    string
+		ignored bool
+	}{
+		{"bar.txt", true},
+		{"level1/bar.txt", true},
+		{"level1/foo.txt", false},
+		{"level1/level2/foo.txt", false},
+		{"level1/level2/bar.txt", true},
+	}
+	for _, tc := range cases {
+		full := filepath.Join(tempDir, tc.path)
+		if err := os.MkdirAll(filepath.Dir(full), 0755); err != nil {
+			t.Fatalf("Failed to create dir for %s: %v", tc.path, err)
+		}
+		if err := os.WriteFile(full, []byte("x"), 0644); err != nil {
+			t.Fatalf("Failed to write file %s: %v", tc.path, err)
+		}
+	}
+	checker, err := NewHierarchicalGitIgnoreChecker(tempDir)
+	if err != nil {
+		t.Fatalf("Failed to create checker: %v", err)
+	}
+	for _, tc := range cases {
+		full := filepath.Join(tempDir, tc.path)
+		if ignored := checker.IsIgnored(full); ignored != tc.ignored {
+			t.Errorf("Expected %s ignored=%v, got %v", tc.path, tc.ignored, ignored)
+		}
+	}
+}
+
+func TestTrailingSlashAndNoSlashDirectoryPattern(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "trailing-slash-test")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+	patterns := "build/\ntemp\n"
+	if err := os.WriteFile(filepath.Join(tempDir, ".gitignore"), []byte(patterns), 0644); err != nil {
+		t.Fatalf("Failed to write .gitignore: %v", err)
+	}
+	for _, d := range []string{"build", "temp"} {
+		path := filepath.Join(tempDir, d, "sub")
+		if err := os.MkdirAll(path, 0755); err != nil {
+			t.Fatalf("Failed to create dir %s: %v", d, err)
+		}
+		if err := os.WriteFile(filepath.Join(path, "file.js"), []byte("x"), 0644); err != nil {
+			t.Fatalf("Failed to write file.js in %s: %v", d, err)
+		}
+	}
+	checker, err := NewHierarchicalGitIgnoreChecker(tempDir)
+	if err != nil {
+		t.Fatalf("Failed to create checker: %v", err)
+	}
+	tests := []struct {
+		path    string
+		ignored bool
+	}{
+		{"build/sub/file.js", true},
+		{"temp/sub/file.js", true},
+		{"buildfile.txt", false},
+	}
+	for _, tc := range tests {
+		full := filepath.Join(tempDir, tc.path)
+		if _, err := os.Stat(full); os.IsNotExist(err) {
+			if err := os.WriteFile(full, []byte("x"), 0644); err != nil {
+				t.Fatalf("Failed to write %s: %v", tc.path, err)
+			}
+		}
+		if ignored := checker.IsIgnored(full); ignored != tc.ignored {
+			t.Errorf("Expected %s ignored=%v, got %v", tc.path, tc.ignored, ignored)
+		}
+	}
+}
+
+func TestWildcardPatternPositions(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "wildcard-test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+	patterns := "log*.txt\n!log1.txt\n"
+	if err := os.WriteFile(filepath.Join(tempDir, ".gitignore"), []byte(patterns), 0644); err != nil {
+		t.Fatalf("Failed to write .gitignore: %v", err)
+	}
+	cases := []struct {
+		path    string
+		ignored bool
+	}{
+		{"log2.txt", true},
+		{"log1.txt", false},
+		{"mylog.txt", false},
+	}
+	for _, tc := range cases {
+		full := filepath.Join(tempDir, tc.path)
+		if err := os.WriteFile(full, []byte("x"), 0644); err != nil {
+			t.Fatalf("Failed to write file %s: %v", tc.path, err)
+		}
+	}
+	checker, err := NewHierarchicalGitIgnoreChecker(tempDir)
+	if err != nil {
+		t.Fatalf("Failed to create checker: %v", err)
+	}
+	for _, tc := range cases {
+		full := filepath.Join(tempDir, tc.path)
+		if ignored := checker.IsIgnored(full); ignored != tc.ignored {
+			t.Errorf("Expected %s ignored=%v, got %v", tc.path, tc.ignored, ignored)
+		}
+	}
+}
