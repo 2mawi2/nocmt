@@ -33,7 +33,16 @@ jobs:
         with:
           go-version: 'stable'
           cache: true
-          
+      
+      - name: Run Tests
+        run: go test -v ./...
+      
+      - name: Lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.1.6
+          args: --timeout=5m --path-mode=abs
+      
       - name: Extract current version
         id: version
         run: |
