@@ -2,4 +2,4 @@
 package main
 
 // Version is the current version of nocmt
-var Version = "1.0.11"
+var Version = "1.0.12"
