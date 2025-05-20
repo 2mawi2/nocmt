@@ -63,7 +63,7 @@ func main() {
 	}
 
 	args := flag.Args()
-	if len(args) > 0 && args[0] == "install-hooks" {
+	if len(args) > 0 && (args[0] == "install-hooks" || args[0] == "install") {
 		err := InstallPreCommitHook(verbose)
 		if err != nil {
 			fmt.Printf("Error installing pre-commit hook: %v\n", err)
@@ -207,7 +207,7 @@ func main() {
 
 	fmt.Println("Error: No action specified")
 	fmt.Println("Usage: nocmt [path] [options]")
-	fmt.Println("       nocmt install-hooks")
+	fmt.Println("       nocmt install")
 	os.Exit(1)
 }
 

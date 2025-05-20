@@ -57,7 +57,7 @@ nocmt ./src
 nocmt --add-ignore "TODO"
 
 # Install as a pre-commit hook (automatically clean all future commits)
-nocmt install-hooks
+nocmt install
 ```
 
 ## AI Comment Removal
@@ -126,7 +126,7 @@ nocmt --dry-run
 nocmt ./src
 
 # Install git pre-commit hook (automatically clean all future commits)
-nocmt install-hooks
+nocmt install
 ```
 
 ### Options
@@ -143,7 +143,7 @@ nocmt install-hooks
 
 ### Commands
 
-- `install-hooks`: Install nocmt as a git pre-commit hook
+- `install`: Install nocmt as a git pre-commit hook
 
 ## Configuration
 
@@ -170,7 +170,7 @@ Installing nocmt as a pre-commit hook ensures your commits are always free of un
 
 ```bash
 # Install git pre-commit hook
-nocmt install-hooks
+nocmt install
 ```
 
 ### Using with pre-commit framework
