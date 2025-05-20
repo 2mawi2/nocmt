@@ -261,10 +261,7 @@ func (h *HierarchicalGitIgnoreChecker) IsIgnored(path string) bool {
 		}
 		matched, pattern := ignorer.MatchesPathHow(subPath)
 		if matched && pattern != nil {
-			if pattern.Negate {
-				return false
-			}
-			return true
+			return !(pattern.Negate)
 		}
 	}
 	return h.defaultIgnorer.MatchesPath(relPath)

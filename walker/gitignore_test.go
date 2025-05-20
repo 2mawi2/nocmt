@@ -13,8 +13,9 @@ func TestGitIgnoreCheckerBasic(t *testing.T) {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
 	defer func() {
-		if err := os.RemoveAll(tempDir); err != nil {
-			t.Logf("Failed to remove temp directory: %v", err)
+		err := os.RemoveAll(tempDir)
+		if err != nil {
+			t.Fatalf("Failed to remove temp dir: %v", err)
 		}
 	}()
 
@@ -77,8 +78,9 @@ func TestHierarchicalGitIgnoreChecker(t *testing.T) {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
 	defer func() {
-		if err := os.RemoveAll(tempDir); err != nil {
-			t.Logf("Failed to remove temp directory: %v", err)
+		err := os.RemoveAll(tempDir)
+		if err != nil {
+			t.Fatalf("Failed to remove temp dir: %v", err)
 		}
 	}()
 
@@ -241,8 +243,9 @@ func TestDefaultIgnorePatternsBehavior(t *testing.T) {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
 	defer func() {
-		if err := os.RemoveAll(tempDir); err != nil {
-			t.Logf("Failed to remove temp directory: %v", err)
+		err := os.RemoveAll(tempDir)
+		if err != nil {
+			t.Fatalf("Failed to remove temp dir: %v", err)
 		}
 	}()
 
@@ -342,7 +345,12 @@ func TestNestedNegationsAndPrecedence(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		err := os.RemoveAll(tempDir)
+		if err != nil {
+			t.Fatalf("Failed to remove temp dir: %v", err)
+		}
+	}()
 	if err := os.WriteFile(filepath.Join(tempDir, ".gitignore"), []byte("*.txt\n"), 0644); err != nil {
 		t.Fatalf("Failed to write root .gitignore: %v", err)
 	}
@@ -389,7 +397,12 @@ func TestTrailingSlashAndNoSlashDirectoryPattern(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		err := os.RemoveAll(tempDir)
+		if err != nil {
+			t.Fatalf("Failed to remove temp dir: %v", err)
+		}
+	}()
 	patterns := "build/\ntemp\n"
 	if err := os.WriteFile(filepath.Join(tempDir, ".gitignore"), []byte(patterns), 0644); err != nil {
 		t.Fatalf("Failed to write .gitignore: %v", err)
@@ -433,7 +446,12 @@ func TestWildcardPatternPositions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		err := os.RemoveAll(tempDir)
+		if err != nil {
+			t.Fatalf("Failed to remove temp dir: %v", err)
+		}
+	}()
 	patterns := "log*.txt\n!log1.txt\n"
 	if err := os.WriteFile(filepath.Join(tempDir, ".gitignore"), []byte(patterns), 0644); err != nil {
 		t.Fatalf("Failed to write .gitignore: %v", err)

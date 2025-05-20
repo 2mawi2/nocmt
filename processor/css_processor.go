@@ -11,10 +11,6 @@ func isCSSDirective(line string) bool {
 	return false
 }
 
-func postProcessCSS(source string, _ []CommentRange, preserveDirectives bool) (string, error) {
-	return source, nil
-}
-
 type CSSProcessor struct {
 	preserveDirectives bool
 }
