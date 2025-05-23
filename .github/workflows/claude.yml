@@ -36,136 +36,110 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           timeout_minutes: 30
           max_turns: 10
-          allowed_tools: [
-            # Git operations (safe git commands only, no force push or remote manipulation)
-            "Bash(git status)",
-            "Bash(git log)",
-            "Bash(git show)",
-            "Bash(git blame)",
-            "Bash(git reflog)",
-            "Bash(git stash list)",
-            "Bash(git stash)",
-            "Bash(git stash pop)",
-            "Bash(git ls-files)",
-            "Bash(git branch)",
-            "Bash(git tag)",
-            "Bash(git diff)",
-            "Bash(git add)",
-            "Bash(git commit)",
-            "Bash(git push)",
-            "Bash(git pull)",
-            "Bash(git fetch)",
-            "Bash(git merge)",
-            "Bash(git rebase)",
-            "Bash(git checkout)",
-            "Bash(git reset --soft)",
-            "Bash(git reset --mixed)",
-            "Bash(git clean -fd)",
-            
-            # Go development tools (all go commands)
-            "Bash(go:*)",
-            "Bash(gofmt:*)",
-            "Bash(golangci-lint:*)",
-            
-            # Build and project management
-            "Bash(just:*)",
-            "Bash(make:*)",
-            
-            # File system operations
-            "Bash(ls:*)",
-            "Bash(cat:*)",
-            "Bash(head:*)",
-            "Bash(tail:*)",
-            "Bash(find:*)",
-            "Bash(grep:*)",
-            "Bash(sed:*)",
-            "Bash(awk:*)",
-            "Bash(sort:*)",
-            "Bash(uniq:*)",
-            "Bash(wc:*)",
-            "Bash(cut:*)",
-            "Bash(tr:*)",
-            "Bash(mkdir:*)",
-            "Bash(rm:*)",
-            "Bash(cp:*)",
-            "Bash(mv:*)",
-            "Bash(touch:*)",
-            "Bash(pwd:*)",
-            "Bash(which:*)",
-            "Bash(whereis:*)",
-            "Bash(file:*)",
-            "Bash(du:*)",
-            "Bash(df:*)",
-            
-            # Text processing and utilities (removed env)
-            "Bash(echo:*)",
-            "Bash(printf:*)",
-            "Bash(date:*)",
-            "Bash(whoami:*)",
-            "Bash(id:*)",
-            "Bash(export:*)",
-            "Bash(history:*)",
-            
-            # Tree-sitter and parsing tools
-            "Bash(tree-sitter:*)",
-            
-            # Package managers (removed brew for security)
-            "Bash(npm:*)",
-            "Bash(yarn:*)",
-            "Bash(pnpm:*)",
-            "Bash(apt:*)",
-            "Bash(yum:*)",
-            "Bash(pip:*)",
-            "Bash(pip3:*)",
-            
-            # Archive and compression
-            "Bash(tar:*)",
-            "Bash(zip:*)",
-            "Bash(unzip:*)",
-            "Bash(gzip:*)",
-            "Bash(gunzip:*)",
-            
-            # Network tools (removed curl and wget for security)
-            "Bash(ping:*)",
-            
-            # Development tools
-            "Bash(node:*)",
-            "Bash(python:*)",
-            "Bash(python3:*)",
-            "Bash(rust:*)",
-            "Bash(cargo:*)",
-            "Bash(java:*)",
-            "Bash(javac:*)",
-            "Bash(mvn:*)",
-            "Bash(gradle:*)",
-            
-            # System monitoring (removed netstat for security)
-            "Bash(ps:*)",
-            "Bash(top:*)",
-            "Bash(htop:*)",
-            "Bash(lsof:*)",
-            
-            # File exploration and analysis tools
-            "View",
-            "Edit",
-            "Create",
-            "Delete", 
-            "Move",
-            "Copy",
-            "ReadFile",
-            "WriteFile",
-            "DeleteFile",
-            "MoveFile",
-            "CopyFile",
-            "GlobTool", 
-            "GrepTool",
-            "BatchTool",
-            "FileSearch",
-            "LS",
-            "ListDir",
-            "SemanticSearch",
-            
-            # Additional utility tools
-            "CreateDirectory"
-          ]
+          allowed_tools:
+            - "Bash(git status)"
+            - "Bash(git log)"
+            - "Bash(git show)"
+            - "Bash(git blame)"
+            - "Bash(git reflog)"
+            - "Bash(git stash list)"
+            - "Bash(git stash)"
+            - "Bash(git stash pop)"
+            - "Bash(git ls-files)"
+            - "Bash(git branch)"
+            - "Bash(git tag)"
+            - "Bash(git diff)"
+            - "Bash(git add)"
+            - "Bash(git commit)"
+            - "Bash(git push)"
+            - "Bash(git pull)"
+            - "Bash(git fetch)"
+            - "Bash(git merge)"
+            - "Bash(git rebase)"
+            - "Bash(git checkout)"
+            - "Bash(git reset --soft)"
+            - "Bash(git reset --mixed)"
+            - "Bash(git clean -fd)"
+            - "Bash(go:*)"
+            - "Bash(gofmt:*)"
+            - "Bash(golangci-lint:*)"
+            - "Bash(just:*)"
+            - "Bash(make:*)"
+            - "Bash(ls:*)"
+            - "Bash(cat:*)"
+            - "Bash(head:*)"
+            - "Bash(tail:*)"
+            - "Bash(find:*)"
+            - "Bash(grep:*)"
+            - "Bash(sed:*)"
+            - "Bash(awk:*)"
+            - "Bash(sort:*)"
+            - "Bash(uniq:*)"
+            - "Bash(wc:*)"
+            - "Bash(cut:*)"
+            - "Bash(tr:*)"
+            - "Bash(mkdir:*)"
+            - "Bash(rm:*)"
+            - "Bash(cp:*)"
+            - "Bash(mv:*)"
+            - "Bash(touch:*)"
+            - "Bash(pwd:*)"
+            - "Bash(which:*)"
+            - "Bash(whereis:*)"
+            - "Bash(file:*)"
+            - "Bash(du:*)"
+            - "Bash(df:*)"
+            - "Bash(echo:*)"
+            - "Bash(printf:*)"
+            - "Bash(date:*)"
+            - "Bash(whoami:*)"
+            - "Bash(id:*)"
+            - "Bash(export:*)"
+            - "Bash(history:*)"
+            - "Bash(tree-sitter:*)"
+            - "Bash(npm:*)"
+            - "Bash(yarn:*)"
+            - "Bash(pnpm:*)"
+            - "Bash(apt:*)"
+            - "Bash(yum:*)"
+            - "Bash(pip:*)"
+            - "Bash(pip3:*)"
+            - "Bash(tar:*)"
+            - "Bash(zip:*)"
+            - "Bash(unzip:*)"
+            - "Bash(gzip:*)"
+            - "Bash(gunzip:*)"
+            - "Bash(ping:*)"
+            - "Bash(node:*)"
+            - "Bash(python:*)"
+            - "Bash(python3:*)"
+            - "Bash(rust:*)"
+            - "Bash(cargo:*)"
+            - "Bash(java:*)"
+            - "Bash(javac:*)"
+            - "Bash(mvn:*)"
+            - "Bash(gradle:*)"
+            - "Bash(ps:*)"
+            - "Bash(top:*)"
+            - "Bash(htop:*)"
+            - "Bash(lsof:*)"
+            - "View"
+            - "Edit"
+            - "Create"
+            - "Delete"
+            - "Move"
+            - "Copy"
+            - "ReadFile"
+            - "WriteFile"
+            - "DeleteFile"
+            - "MoveFile"
+            - "CopyFile"
+            - "GlobTool"
+            - "GrepTool"
+            - "BatchTool"
+            - "FileSearch"
+            - "LS"
+            - "ListDir"
+            - "SemanticSearch"
+            - "CreateDirectory"
 
