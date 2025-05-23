@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"
-	"github.com/smacker/go-tree-sitter/java"
+	java "github.com/tree-sitter/tree-sitter-java"
 )
 
 type JavaProcessor struct {
@@ -13,24 +13,36 @@ type JavaProcessor struct {
 
 func isJavaDirective(line string) bool {
 	trimmed := strings.TrimSpace(line)
-	return strings.HasPrefix(trimmed, "// @formatter:") ||
-		strings.HasPrefix(trimmed, "// @SuppressWarnings") ||
-		strings.HasPrefix(trimmed, "//CHECKSTYLE") ||
-		strings.Contains(trimmed, "@SuppressWarnings") ||
-		strings.Contains(trimmed, "CHECKSTYLE.OFF") ||
-		strings.Contains(trimmed, "CHECKSTYLE.ON") ||
-		strings.Contains(trimmed, "NOCHECKSTYLE") ||
-		strings.Contains(trimmed, "NOSONAR") ||
-		strings.Contains(trimmed, "NOFOLINT")
+	
+	// Don't treat comments as directives
+	if strings.HasPrefix(trimmed, "//") {
+		return false
+	}
+	
+	// Preserve Java annotations (e.g., @Override, @SuppressWarnings, etc.)
+	return strings.HasPrefix(trimmed, "@") ||
+		strings.HasPrefix(trimmed, "#!") ||
+		strings.Contains(trimmed, "@")
+}
+
+func isJavaSingleLineCommentNode(node *sitter.Node, sourceText string) bool {
+	nodeType := node.Type()
+	
+	if nodeType == "line_comment" || nodeType == "comment" {
+		commentText := sourceText[node.StartByte():node.EndByte()]
+		trimmed := strings.TrimSpace(commentText)
+		
+		// Only single-line comments (//), not multi-line (/* */) or doc comments (/** */)
+		return strings.HasPrefix(trimmed, "//")
+	}
+	return false
 }
 
 func NewJavaProcessor(preserveDirectives bool) *JavaProcessor {
 	single := NewSingleLineCoreProcessor(
 		"java",
 		java.GetLanguage(),
-		func(node *sitter.Node, src string) bool {
-			return node.Type() == "line_comment"
-		},
+		isJavaSingleLineCommentNode,
 		isJavaDirective,
 		nil,
 	).WithPreserveDirectives(preserveDirectives)
