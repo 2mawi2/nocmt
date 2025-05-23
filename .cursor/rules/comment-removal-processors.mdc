@@ -1,0 +1,50 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Comment Removal Processor Standards
+
+## Core Requirements
+
+**ONLY remove single-line comments** (`//`, `#`, etc.) while preserving:
+- Multi-line comments (`/* */`)
+- Documentation comments (`/** */`, `"""`, etc.)
+- Language directives/annotations (`@`, `#!`, pragmas, decorators)
+
+## Line Handling Rules
+
+- **Line with only comment**: Remove entire line
+- **Line with code + comment**: Remove only comment, preserve code
+- **No line artifacts**: Use `PreserveOriginalTrailingNewline()` to avoid trailing newline issues
+
+## Implementation Pattern
+
+Follow the pattern in [kotlin_processor.go](mdc:processor/kotlin_processor.go):
+
+1. **Use `SingleLineCoreProcessor`** - handles the core logic
+2. **Implement comment node detection** - identify language-specific comment nodes
+3. **Implement directive detection** - preserve important language constructs
+4. **Register in factory** - add to [processor.go](mdc:processor/processor.go) constructor and extension map
+
+## Test Data Structure
+
+For each language `{lang}`:
+- Create `testdata/{lang}/` directory
+- Add `original.{ext}` - file with all comment types
+- Add `expected.{ext}` - file with only single-line comments removed
+- Preserve annotations, block comments, and documentation
+
+## Processor Registration
+
+1. Add constructor call in `NewProcessorFactory()`
+2. Add language to `RegisterConstructor()` 
+3. Add file extensions to `GetProcessorByExtension()` map
+
+## Testing Requirements
+
+Create comprehensive tests in `{lang}_processor_test.go`:
+- File-based test using test data
+- Language name and directive flag tests  
+- Directive detection unit tests
+- Single-line comment removal scenarios
