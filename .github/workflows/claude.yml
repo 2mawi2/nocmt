@@ -23,6 +23,7 @@ jobs:
       pull-requests: read
       issues: read
       id-token: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,5 +34,33 @@ jobs:
         id: claude
         uses: anthropics/claude-code-action@beta
         with:
+          allowed_tools: [
+            "Bash(git status)",
+            "Bash(git log)",
+            "Bash(git show)",
+            "Bash(git blame)",
+            "Bash(git reflog)",
+            "Bash(git stash list)",
+            "Bash(git ls-files)",
+            "Bash(git branch)",
+            "Bash(git tag)",
+            "Bash(git diff)",
+            "Bash(go test ./...)",
+            "Bash(go build)",
+            "Bash(go mod tidy)",
+            "Bash(go mod download)",
+            "Bash(gofmt -w .)",
+            "Bash(just test)",
+            "Bash(just build)",
+            "Bash(just lint)",
+            "Bash(mkdir -p)",
+            "Bash(ls -la)",
+            "Edit",
+            "Write",
+            "View",
+            "Agent",
+            "GlobTool",
+            "GrepTool",
+            "BatchTool"
+          ]
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-
