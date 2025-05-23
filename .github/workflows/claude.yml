@@ -1,0 +1,325 @@
+name: Claude Agent Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      task_description:
+        description: 'Task description for Claude agent'
+        required: true
+        type: string
+      branch_name:
+        description: 'Branch to work on (default: creates new feature branch)'
+        required: false
+        type: string
+        default: ''
+      dry_run:
+        description: 'Run in dry-run mode (no commits/pushes)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+  checks: write
+  discussions: write
+  packages: read
+  pages: write
+  repository-projects: write
+  security-events: write
+  statuses: write
+
+jobs:
+  claude-agent:
+    name: Claude Agent Execution
+    runs-on: ubuntu-latest
+    
+    env:
+      # GitHub CLI configuration
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Go environment
+      GO_VERSION: 'stable'
+      CGO_ENABLED: 1
+      
+      # Claude agent configuration
+      TASK_DESCRIPTION: ${{ github.event.inputs.task_description }}
+      BRANCH_NAME: ${{ github.event.inputs.branch_name }}
+      DRY_RUN: ${{ github.event.inputs.dry_run }}
+      
+      # Security and access
+      RUNNER_WORKSPACE: ${{ github.workspace }}
+      
+    steps:
+      # Setup and checkout
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Git Configuration
+        run: |
+          git config --global user.name "Claude Agent"
+          git config --global user.email "claude-agent@anthropic.com"
+          git config --global init.defaultBranch main
+          git config --global pull.rebase false
+      
+      # Development environment setup
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            gcc \
+            g++ \
+            make \
+            curl \
+            wget \
+            jq \
+            tree \
+            ripgrep \
+            fd-find \
+            git-extras \
+            build-essential
+      
+      - name: Install Go Tools
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          go install github.com/goreleaser/goreleaser@latest
+          go install golang.org/x/tools/cmd/goimports@latest
+      
+      - name: Install Just
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+          just --version
+      
+      # GitHub CLI setup and verification
+      - name: Setup GitHub CLI
+        run: |
+          # Verify gh is available and authenticated
+          gh --version
+          gh auth status
+          
+          # Test repository access
+          gh repo view --json name,owner,url
+          gh api user --jq .login
+      
+      # Tool availability verification
+      - name: Verify Tool Availability
+        run: |
+          echo "=== System Information ==="
+          uname -a
+          pwd
+          whoami
+          
+          echo "=== Available Tools ==="
+          echo "Bash: $(which bash) - $(bash --version | head -1)"
+          echo "Git: $(which git) - $(git --version)"
+          echo "GitHub CLI: $(which gh) - $(gh --version | head -1)"
+          echo "Go: $(which go) - $(go version)"
+          echo "Just: $(which just) - $(just --version)"
+          echo "Ripgrep: $(which rg) - $(rg --version | head -1)"
+          echo "Find: $(which fd) || $(which find)"
+          echo "Curl: $(which curl) - $(curl --version | head -1)"
+          echo "Wget: $(which wget) - $(wget --version | head -1)"
+          echo "JQ: $(which jq) - $(jq --version)"
+          echo "Tree: $(which tree) - $(tree --version | head -1)"
+          
+          echo "=== Go Tools ==="
+          echo "golangci-lint: $(which golangci-lint) - $(golangci-lint --version | head -1)"
+          echo "goimports: $(which goimports)"
+          
+          echo "=== File System Access ==="
+          ls -la
+          echo "Working directory: $(pwd)"
+          echo "Home directory: $HOME"
+          echo "Workspace: $GITHUB_WORKSPACE"
+          
+          echo "=== Git Repository Status ==="
+          git status
+          git branch -a
+          git log --oneline -5
+      
+      # Branch management
+      - name: Setup Working Branch
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          if [ -n "$BRANCH_NAME" ]; then
+            echo "Using specified branch: $BRANCH_NAME"
+            git checkout -b "$BRANCH_NAME" 2>/dev/null || git checkout "$BRANCH_NAME"
+          else
+            # Generate branch name from task description
+            CLEAN_TASK=$(echo "$TASK_DESCRIPTION" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
+            BRANCH_NAME="claude-agent/${CLEAN_TASK:0:50}"
+            echo "Creating branch: $BRANCH_NAME"
+            git checkout -b "$BRANCH_NAME"
+          fi
+          echo "WORKING_BRANCH=$BRANCH_NAME" >> $GITHUB_ENV
+      
+      # Project validation and setup
+      - name: Validate Project Structure
+        run: |
+          echo "=== Project Validation ==="
+          
+          # Check for required files
+          if [ -f "go.mod" ]; then
+            echo "✓ Go project detected"
+            go mod download
+            go mod verify
+          fi
+          
+          if [ -f "justfile" ]; then
+            echo "✓ Justfile found"
+            just --list
+          fi
+          
+          if [ -f "CLAUDE.md" ]; then
+            echo "✓ CLAUDE.md found"
+            head -20 CLAUDE.md
+          fi
+          
+          # Run initial build/test to ensure project is in good state
+          echo "=== Initial Build Test ==="
+          if command -v just >/dev/null && just --list | grep -q "build"; then
+            just build
+          else
+            go build -v ./...
+          fi
+          
+          echo "=== Initial Test Run ==="
+          if command -v just >/dev/null && just --list | grep -q "test"; then
+            just test
+          else
+            go test -v ./...
+          fi
+      
+      # Security and permissions validation
+      - name: Security Validation
+        run: |
+          echo "=== Security Validation ==="
+          
+          # Verify we can write to workspace
+          touch $GITHUB_WORKSPACE/test-write-permission
+          rm $GITHUB_WORKSPACE/test-write-permission
+          echo "✓ File system write access confirmed"
+          
+          # Verify git operations
+          git status
+          echo "✓ Git access confirmed"
+          
+          # Verify GitHub API access
+          gh api user --jq .login
+          echo "✓ GitHub API access confirmed"
+          
+          # List available environment variables (non-sensitive)
+          echo "=== Available Environment Context ==="
+          env | grep -E '^(GITHUB_|RUNNER_|CI)' | grep -v TOKEN | sort
+      
+      # Main execution placeholder
+      - name: Claude Agent Execution
+        run: |
+          echo "=== Claude Agent Ready ==="
+          echo "Task: $TASK_DESCRIPTION"
+          echo "Branch: ${WORKING_BRANCH:-main}"
+          echo "Dry Run: $DRY_RUN"
+          echo "Workspace: $GITHUB_WORKSPACE"
+          
+          echo "=== Available Capabilities ==="
+          echo "✓ Full file system read/write access"
+          echo "✓ Git operations (clone, commit, push, pull, merge)"
+          echo "✓ GitHub CLI (issues, PRs, releases, comments)"
+          echo "✓ Build tools (Go, Just, Make)"
+          echo "✓ Code analysis (golangci-lint, goimports)"
+          echo "✓ Testing framework access"
+          echo "✓ Web access (curl, wget)"
+          echo "✓ Text processing (grep, sed, awk, jq)"
+          echo "✓ Advanced search (ripgrep, fd)"
+          echo "✓ Package management (go mod)"
+          
+          echo ""
+          echo "Claude agent environment is fully configured and ready for task execution."
+          echo "All tools are whitelisted and available for use."
+          
+          # Here would be the actual Claude agent execution
+          # For now, this serves as a comprehensive setup and validation
+          
+          # Example of tool usage validation
+          echo "=== Tool Usage Examples ==="
+          
+          # File operations
+          echo "File listing:" && ls -la
+          
+          # Search operations  
+          echo "Code search:" && rg --type go "func.*test" --count || echo "No test functions found"
+          
+          # Git operations
+          echo "Git info:" && git branch && git status --porcelain
+          
+          # GitHub operations
+          echo "GitHub info:" && gh repo view --json name,description
+          
+          # Build operations
+          echo "Build test:" && go build -v ./... && echo "✓ Build successful"
+          
+          echo "=== Environment Ready ==="
+      
+      # Cleanup and summary
+      - name: Execution Summary
+        if: always()
+        run: |
+          echo "=== Execution Summary ==="
+          echo "Task: $TASK_DESCRIPTION"
+          echo "Status: Environment setup completed"
+          echo "Tools verified: ✓"
+          echo "Permissions verified: ✓"
+          echo "Project state: $(git status --porcelain | wc -l) changes detected"
+          
+          if [ "$DRY_RUN" = "false" ] && [ -n "${WORKING_BRANCH:-}" ]; then
+            echo "Working branch: $WORKING_BRANCH"
+            git log --oneline -5
+          fi
+      
+      # Optional: Create summary issue/comment
+      - name: Create Execution Report
+        if: ${{ github.event.inputs.dry_run != 'true' && success() }}
+        run: |
+          cat > execution-report.md << 'EOF'
+          # Claude Agent Execution Report
+          
+          **Task:** ${{ github.event.inputs.task_description }}
+          **Branch:** ${WORKING_BRANCH:-main}
+          **Status:** Environment Ready
+          **Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          ## Environment Verification
+          - ✅ All tools installed and accessible
+          - ✅ GitHub CLI authenticated and functional
+          - ✅ Git operations validated
+          - ✅ Build environment confirmed
+          - ✅ File system permissions verified
+          
+          ## Available Tools
+          - Bash scripting and command execution
+          - Git version control operations
+          - GitHub CLI for repository management
+          - Go development tools and testing
+          - Code analysis and formatting tools
+          - Web access and API interactions
+          - Advanced text processing and search
+          
+          ## Next Steps
+          Claude agent environment is fully configured and ready for autonomous task execution.
+          EOF
+          
+          # Note: In a real implementation, this would be where Claude 
+          # would receive the execution-report.md and continue with actual task execution
