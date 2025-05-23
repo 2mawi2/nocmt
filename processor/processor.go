@@ -41,6 +41,7 @@ func NewProcessorFactory() *ProcessorFactory {
 	factory.Register(NewBashProcessor(false))
 	factory.Register(NewCSSProcessor(false))
 	factory.Register(NewKotlinProcessor(false))
+	factory.Register(NewJavaProcessor(false))
 
 	factory.RegisterConstructor("go", func(preserveDirectives bool) LanguageProcessor {
 		return NewGoProcessor(preserveDirectives)
@@ -68,6 +69,9 @@ func NewProcessorFactory() *ProcessorFactory {
 	})
 	factory.RegisterConstructor("kotlin", func(preserveDirectives bool) LanguageProcessor {
 		return NewKotlinProcessor(preserveDirectives)
+	})
+	factory.RegisterConstructor("java", func(preserveDirectives bool) LanguageProcessor {
+		return NewJavaProcessor(preserveDirectives)
 	})
 
 	return factory
@@ -125,6 +129,7 @@ func (f *ProcessorFactory) GetProcessorByExtension(filename string) (LanguagePro
 		".less": "css",
 		".kt":   "kotlin",
 		".kts":  "kotlin",
+		".java": "java",
 	}
 
 	for ext, lang := range extMap {

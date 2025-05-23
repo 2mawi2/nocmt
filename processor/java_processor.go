@@ -15,7 +15,8 @@ func isJavaDirective(line string) bool {
 	trimmed := strings.TrimSpace(line)
 	return strings.HasPrefix(trimmed, "// @formatter:") ||
 		strings.HasPrefix(trimmed, "// @SuppressWarnings") ||
-		strings.HasPrefix(trimmed, "//CHECKSTYLE") ||
+		strings.Contains(trimmed, "//CHECKSTYLE") ||
+		strings.Contains(trimmed, "// CHECKSTYLE") ||
 		strings.Contains(trimmed, "@SuppressWarnings") ||
 		strings.Contains(trimmed, "CHECKSTYLE.OFF") ||
 		strings.Contains(trimmed, "CHECKSTYLE.ON") ||
