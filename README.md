@@ -94,13 +94,37 @@ nocmt gives you control back by letting you decide exactly which comments stay a
 
 ## Supported Languages
 
-- Go
-- JavaScript/TypeScript
-- Java
-- Python
-- Rust
-- Bash
-- CSS
+nocmt supports **12 programming languages** with intelligent comment removal:
+
+| Language | Extensions | Comment Removal Behavior |
+|----------|------------|-------------------------|
+| **Go** | `.go` | Removes `//` comments, preserves `/* */` blocks and directives |
+| **JavaScript** | `.js`, `.jsx` | Removes `//` comments, preserves `/* */` blocks and JSDoc |
+| **TypeScript** | `.ts` | Removes `//` comments, preserves `/* */` blocks and TSDoc |
+| **Java** | `.java` | Removes `//` comments, preserves `/* */` blocks and JavaDoc |
+| **Python** | `.py`, `.pyi`, `.pyx` | Removes `#` comments, preserves docstrings and directives |
+| **C++** | `.cpp`, `.cxx`, `.cc`, `.c++`, `.hpp`, `.hxx`, `.hh`, `.h++`, `.h` | Removes `//` comments, preserves `/* */` blocks and documentation |
+| **C#** | `.cs` | Removes `//` comments, preserves `/* */` blocks and XML docs |
+| **Swift** | `.swift` | Removes `//` comments, preserves `///` docs and `/* */` blocks |
+| **Rust** | `.rs` | Removes `//` comments, preserves `/* */` blocks and attributes |
+| **Kotlin** | `.kt`, `.kts` | Removes `//` comments, preserves `/* */` blocks and KDoc |
+| **Bash** | `.sh`, `.bash` | Removes `#` comments, preserves shebangs and directives |
+| **CSS** | `.css`, `.scss`, `.less` | Removes `/* */` comments selectively |
+
+### What Gets Preserved
+
+By default (with `--preserve-directives`, which is the default):
+- **Documentation comments**: JavaDoc, JSDoc, Python docstrings, etc.
+- **Block/multi-line comments**: `/* */` style comments
+- **Important directives**: `TODO`, `FIXME`, `NOTE`, `HACK`, `XXX`, `BUG`, `WARNING`
+- **Compiler directives**: `//go:generate`, `#pragma`, `@SuppressWarnings`, etc.
+- **Shebangs and attributes**: `#!/bin/bash`, `#[derive(...)]`, etc.
+
+### What Gets Removed
+
+- **Single-line comments**: `//` and `#` style comments (except directives)
+- **Inline explanatory comments**: Comments that explain obvious code
+- **AI-generated verbose explanations**: Long explanatory comments
 
 ## Usage
 
@@ -185,7 +209,7 @@ repos:
     description: Remove comments from source code
     entry: nocmt
     language: golang
-    files: \.(go|js|ts|java|py|cs|rs|kt|swift|sh|css)$
+    files: \.(go|js|jsx|ts|java|py|pyi|pyx|cpp|cxx|cc|c\+\+|hpp|hxx|hh|h\+\+|h|cs|swift|rs|kt|kts|sh|bash|css|scss|less)$
 ```
 
 ## License
