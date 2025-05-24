@@ -7,6 +7,7 @@ import (
 
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/bash"
+	"github.com/smacker/go-tree-sitter/cpp"
 	"github.com/smacker/go-tree-sitter/csharp"
 	"github.com/smacker/go-tree-sitter/css"
 	"github.com/smacker/go-tree-sitter/golang"
@@ -38,6 +39,8 @@ func GetParserForProcessor(proc LanguageProcessor) *sitter.Parser {
 		language = rust.GetLanguage()
 	case "css":
 		language = css.GetLanguage()
+	case "cpp":
+		language = cpp.GetLanguage()
 	default:
 		return nil
 	}
@@ -99,6 +102,8 @@ func IsDirective(proc LanguageProcessor, comment string) bool {
 		return isRustDirectiveSelective(comment)
 	case "css":
 		return isCSSDirective(comment)
+	case "cpp":
+		return isCPPDirective(comment)
 	default:
 		return false
 	}
@@ -187,4 +192,29 @@ func isBashDirective(comment string) bool {
 func isRustDirectiveSelective(comment string) bool {
 	trimmed := strings.TrimSpace(comment)
 	return strings.HasPrefix(trimmed, "#!") || strings.HasPrefix(trimmed, "#[")
+}
+
+func isCPPDirective(comment string) bool {
+	trimmed := strings.TrimSpace(comment)
+
+	if strings.HasPrefix(trimmed, "//") {
+		content := strings.TrimSpace(strings.TrimPrefix(trimmed, "//"))
+
+		if strings.HasPrefix(content, "TODO") ||
+			strings.HasPrefix(content, "FIXME") ||
+			strings.HasPrefix(content, "NOTE") ||
+			strings.HasPrefix(content, "HACK") ||
+			strings.HasPrefix(content, "XXX") ||
+			strings.HasPrefix(content, "BUG") ||
+			strings.HasPrefix(content, "WARNING") {
+			return true
+		}
+
+		if strings.HasPrefix(content, "pragma") ||
+			strings.HasPrefix(content, "#pragma") {
+			return true
+		}
+	}
+
+	return false
 }

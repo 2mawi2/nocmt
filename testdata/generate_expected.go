@@ -14,14 +14,14 @@ func main() {
 	if len(os.Args) != 2 {
 		fmt.Println("Usage: go run generate_expected.go <language>")
 		fmt.Println("       go run generate_expected.go all")
-		fmt.Println("\nAvailable languages: go, javascript, typescript, python, rust, css, csharp, bash")
+		fmt.Println("\nAvailable languages: go, javascript, typescript, python, rust, css, csharp, bash, cpp")
 		os.Exit(1)
 	}
 
 	language := os.Args[1]
 
 	if language == "all" {
-		languages := []string{"go", "javascript", "typescript", "python", "rust", "css", "csharp", "bash"}
+		languages := []string{"go", "javascript", "typescript", "python", "rust", "css", "csharp", "bash", "cpp"}
 		for _, lang := range languages {
 			if err := processLanguage(lang); err != nil {
 				fmt.Printf("Error processing %s: %v\n", lang, err)
@@ -65,6 +65,9 @@ func processLanguage(language string) error {
 	case "bash":
 		proc = processor.NewBashProcessor(true)
 		ext = "sh"
+	case "cpp":
+		proc = processor.NewCppProcessor(true)
+		ext = "cpp"
 	default:
 		return fmt.Errorf("unknown language: %s", language)
 	}
