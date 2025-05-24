@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"nocmt/config"
-	// TODO: Add swift grammar once a reliable one is found or created
 )
 
 type LanguageProcessor interface {
@@ -42,6 +41,7 @@ func NewProcessorFactory() *ProcessorFactory {
 	factory.Register(NewCSSProcessor(false))
 	factory.Register(NewKotlinProcessor(false))
 	factory.Register(NewJavaProcessor(false))
+	factory.Register(NewSwiftProcessor(false))
 
 	factory.RegisterConstructor("go", func(preserveDirectives bool) LanguageProcessor {
 		return NewGoProcessor(preserveDirectives)
@@ -72,6 +72,9 @@ func NewProcessorFactory() *ProcessorFactory {
 	})
 	factory.RegisterConstructor("java", func(preserveDirectives bool) LanguageProcessor {
 		return NewJavaProcessor(preserveDirectives)
+	})
+	factory.RegisterConstructor("swift", func(preserveDirectives bool) LanguageProcessor {
+		return NewSwiftProcessor(preserveDirectives)
 	})
 
 	return factory
@@ -113,23 +116,24 @@ func (f *ProcessorFactory) GetProcessor(language string) (LanguageProcessor, err
 
 func (f *ProcessorFactory) GetProcessorByExtension(filename string) (LanguageProcessor, error) {
 	extMap := map[string]string{
-		".go":   "go",
-		".js":   "javascript",
-		".jsx":  "javascript",
-		".ts":   "typescript",
-		".py":   "python",
-		".pyi":  "python",
-		".pyx":  "python",
-		".cs":   "csharp",
-		".rs":   "rust",
-		".sh":   "bash",
-		".bash": "bash",
-		".css":  "css",
-		".scss": "css",
-		".less": "css",
-		".kt":   "kotlin",
-		".kts":  "kotlin",
-		".java": "java",
+		".go":    "go",
+		".js":    "javascript",
+		".jsx":   "javascript",
+		".ts":    "typescript",
+		".py":    "python",
+		".pyi":   "python",
+		".pyx":   "python",
+		".cs":    "csharp",
+		".rs":    "rust",
+		".sh":    "bash",
+		".bash":  "bash",
+		".css":   "css",
+		".scss":  "css",
+		".less":  "css",
+		".kt":    "kotlin",
+		".kts":   "kotlin",
+		".java":  "java",
+		".swift": "swift",
 	}
 
 	for ext, lang := range extMap {

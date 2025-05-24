@@ -31,8 +31,6 @@ TESTING APPROACH:
 3. Use meaningful test names that describe the behavior being tested
 4. Keep test setup minimal and explicit
 5. Mock external dependencies, not internal code
-6. Use vi.mock to mock external dependencies
-7. Use vitest instead of jest
 
 MAKING CHANGES:
 1. Make one small change at a time
@@ -58,8 +56,10 @@ ABSOLUTELY NO HARDCODING OR SPECIAL CASING:
 AFTER THE CHANGES:
 1. **IMMEDIATELY run `just test` using you terminal tool**. Do not proceed until tests pass.
 2. Check the build is successful (often covered by `just test`).
-3. Only if tests pass, summarize the changes made.
-4. Only if tests pass, state the task is ready or ask the user for the next step.
+3. Run the linter using `just lint` after each change, only if the linter has no errors, summarize the changed made.
+4. Only if tests pass, summarize the changes made.
+5. Only if tests pass, state the task is ready or ask the user for the next step.
+
 
 CODE QUALITY:
 1. Follow existing patterns in the codebase

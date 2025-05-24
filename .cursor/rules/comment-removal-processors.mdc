@@ -1,5 +1,5 @@
 ---
-description: 
+description: Describes the functionality how a processor should behave
 globs: 
 alwaysApply: false
 ---

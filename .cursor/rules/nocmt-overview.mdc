@@ -21,6 +21,7 @@ alwaysApply: true
 -   `config/config.go`: Handles loading and applying configurations.
 -   `walker/walker.go`: File system traversal, respects `.gitignore`.
 -   `processor/selective_removal.go`: Logic for processing only modified lines in staged files.
+-   `testdata`: Contains test data for each programming language for the tests. It's by default ignored, so the original-file comments are not remove, in order to not break the tests.
 
 **Primary Goal for AI Assistance:**
 Help with maintaining/extending language processors, improving CLI options, or enhancing the Git integration logic.

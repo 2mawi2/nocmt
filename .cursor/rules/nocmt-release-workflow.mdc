@@ -1,6 +1,6 @@
 ---
-description:
-globs:
+description: Describes how to release
+globs: 
 alwaysApply: false
 ---
 # Release Workflow Documentation for `nocmt`
@@ -11,7 +11,7 @@ The release process is automated via GitHub Actions workflow in `.github/workflo
 ## Version Management
 - Version is stored in `version.go` as a separate file (e.g., `var Version = "1.0.1"`)
 - The workflow automatically increments the patch version after each release
-- Versions follow [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`)
+- Versions follow [Semantic Versioning](mdc:https:/semver.org) (`MAJOR.MINOR.PATCH`)
 
 ## Branch Strategy
 The project uses two main branches:
