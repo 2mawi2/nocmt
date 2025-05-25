@@ -9,7 +9,7 @@ import (
 func TestBashProcessor(t *testing.T) {
 	t.Run("BasicCommentStripping", func(t *testing.T) {
 		processor := NewBashProcessor(true)
-		RunFileBasedTestCaseVeryLenient(t, processor, "../testdata/bash/original.sh", "../testdata/bash/expected.sh")
+		RunFileBasedTestCaseVeryLenient(t, processor, "../../testdata/bash/original.sh", "../../testdata/bash/expected.sh")
 	})
 
 	t.Run("DirectiveHandling", func(t *testing.T) {

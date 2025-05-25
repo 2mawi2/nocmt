@@ -9,7 +9,7 @@ import (
 func TestRustProcessor_FileBased(t *testing.T) {
 	t.Run("WithDirectives", func(t *testing.T) {
 		processor := NewRustProcessor(true)
-		RunFileBasedTestCaseNormalized(t, processor, "../testdata/rust/original.rs", "../testdata/rust/expected.rs")
+		RunFileBasedTestCaseNormalized(t, processor, "../../testdata/rust/original.rs", "../../testdata/rust/expected.rs")
 	})
 	t.Run("WithoutDirectives_Simple", func(t *testing.T) {
 		processor := NewRustProcessor(false)

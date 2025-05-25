@@ -51,7 +51,7 @@ function test() {
 	}
 
 	binaryPath := filepath.Join(tempDir, "nocmt-test")
-	buildCmd := exec.Command("go", "build", "-o", binaryPath)
+	buildCmd := exec.Command("go", "build", "-o", binaryPath, "./cmd/nocmt")
 	err = buildCmd.Run()
 	if err != nil {
 		t.Fatalf("Failed to build nocmt binary: %v", err)
@@ -115,7 +115,7 @@ func TestFunc() {
 	}
 
 	binaryPath := filepath.Join(tempDir, "nocmt-test")
-	buildCmd := exec.Command("go", "build", "-o", binaryPath)
+	buildCmd := exec.Command("go", "build", "-o", binaryPath, "./cmd/nocmt")
 	err = buildCmd.Run()
 	if err != nil {
 		t.Fatalf("Failed to build nocmt binary: %v", err)
@@ -183,7 +183,7 @@ func TestFunc() {
 	}
 
 	binaryPath := filepath.Join(tempDir, "nocmt-test")
-	buildCmd := exec.Command("go", "build", "-o", binaryPath)
+	buildCmd := exec.Command("go", "build", "-o", binaryPath, "./cmd/nocmt")
 	err = buildCmd.Run()
 	if err != nil {
 		t.Fatalf("Failed to build nocmt binary: %v", err)
@@ -249,7 +249,7 @@ func TestFunc() {
 	}
 
 	binaryPath := filepath.Join(tempDir, "nocmt-test")
-	buildCmd := exec.Command("go", "build", "-o", binaryPath)
+	buildCmd := exec.Command("go", "build", "-o", binaryPath, "./cmd/nocmt")
 	err = buildCmd.Run()
 	if err != nil {
 		t.Fatalf("Failed to build nocmt binary: %v", err)
@@ -303,7 +303,7 @@ func TestFunc() {
 	}
 
 	binaryPath := filepath.Join(tempDir, "nocmt-test")
-	buildCmd := exec.Command("go", "build", "-o", binaryPath)
+	buildCmd := exec.Command("go", "build", "-o", binaryPath, "./cmd/nocmt")
 	err = buildCmd.Run()
 	if err != nil {
 		t.Fatalf("Failed to build nocmt binary: %v", err)
@@ -397,7 +397,7 @@ func UnstagedFunc() {
 	}
 
 	binaryPath := filepath.Join(tempDir, "nocmt-test")
-	buildCmd := exec.Command("go", "build", "-o", binaryPath)
+	buildCmd := exec.Command("go", "build", "-o", binaryPath, "./cmd/nocmt")
 	err = buildCmd.Run()
 	if err != nil {
 		t.Fatalf("Failed to build nocmt binary: %v", err)

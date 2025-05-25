@@ -9,7 +9,7 @@ import (
 func TestGoProcessor_FileBased(t *testing.T) {
 	t.Run("WithDirectives", func(t *testing.T) {
 		processor := NewGoProcessor(true)
-		RunFileBasedTestCaseNormalized(t, processor, "../testdata/go/original.go", "../testdata/go/expected.go")
+		RunFileBasedTestCaseNormalized(t, processor, "../../testdata/go/original.go", "../../testdata/go/expected.go")
 	})
 	t.Run("WithoutDirectives_Simple", func(t *testing.T) {
 		factory := NewProcessorFactory()
@@ -27,7 +27,7 @@ func main(){}
 	})
 	t.Run("No_Line_Artifacts_Strict", func(t *testing.T) {
 		processor := NewGoProcessor(true)
-		RunFileBasedTestCase(t, processor, "../testdata/go/original_no_line_artifacts.go", "../testdata/go/expected_no_line_artifacts.go")
+		RunFileBasedTestCase(t, processor, "../../testdata/go/original_no_line_artifacts.go", "../../testdata/go/expected_no_line_artifacts.go")
 	})
 }
 

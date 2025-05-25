@@ -9,7 +9,7 @@ import (
 func TestCppProcessor_FileBased(t *testing.T) {
 	t.Run("WithDirectives", func(t *testing.T) {
 		processor := NewCppProcessor(true)
-		RunFileBasedTestCaseNormalized(t, processor, "../testdata/cpp/original.cpp", "../testdata/cpp/expected.cpp")
+		RunFileBasedTestCaseNormalized(t, processor, "../../testdata/cpp/original.cpp", "../../testdata/cpp/expected.cpp")
 	})
 	t.Run("WithoutDirectives", func(t *testing.T) {
 		processor := NewCppProcessor(false)

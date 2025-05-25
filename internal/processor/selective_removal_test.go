@@ -1,7 +1,7 @@
 package processor
 
 import (
-	"nocmt/config"
+	"nocmt/internal/config"
 	"testing"
 )
 

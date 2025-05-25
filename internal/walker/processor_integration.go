@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"nocmt/config"
-	"nocmt/processor"
+	"nocmt/internal/config"
+	"nocmt/internal/processor"
 )
 
 type ProcessorConfig struct {

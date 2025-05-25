@@ -9,7 +9,7 @@ import (
 func TestKotlinProcessor_FileBased(t *testing.T) {
 	t.Run("WithDirectives", func(t *testing.T) {
 		processor := NewKotlinProcessor(true)
-		RunFileBasedTestCaseNormalized(t, processor, "../testdata/kotlin/original.kt", "../testdata/kotlin/expected.kt")
+		RunFileBasedTestCaseNormalized(t, processor, "../../testdata/kotlin/original.kt", "../../testdata/kotlin/expected.kt")
 	})
 	t.Run("WithoutDirectives_Simple", func(t *testing.T) {
 		processor := NewKotlinProcessor(false)

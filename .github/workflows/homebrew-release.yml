@@ -47,7 +47,7 @@ jobs:
         id: version
         run: |
           # Extract current version from the code
-          CURRENT_VERSION=$(grep -o 'var Version = "[^"]*"' version.go | cut -d'"' -f2)
+          CURRENT_VERSION=$(grep -o 'var Version = "[^"]*"' internal/cli/version.go | cut -d'"' -f2)
           echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "tag=v$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $CURRENT_VERSION"
@@ -58,10 +58,10 @@ jobs:
           VERSION=${{ steps.version.outputs.version }}
           
           # MacOS amd64
-          CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -v -o artifacts/nocmt-darwin-amd64 -ldflags="-s -w -X main.Version=$VERSION" .
+          CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -v -o artifacts/nocmt-darwin-amd64 -ldflags="-s -w -X nocmt/internal/cli.Version=$VERSION" ./cmd/nocmt
           
           # MacOS arm64
-          CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -v -o artifacts/nocmt-darwin-arm64 -ldflags="-s -w -X main.Version=$VERSION" .
+          CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -v -o artifacts/nocmt-darwin-arm64 -ldflags="-s -w -X nocmt/internal/cli.Version=$VERSION" ./cmd/nocmt
           
           # Create checksums
           cd artifacts
@@ -111,7 +111,7 @@ jobs:
           
             def install
               ENV["CGO_ENABLED"] = "1"
-              system "go", "build", *std_go_args(ldflags: "-s -w -X main.Version=${{ needs.build.outputs.version }}")
+              system "go", "build", *std_go_args(ldflags: "-s -w -X nocmt/internal/cli.Version=${{ needs.build.outputs.version }}"), "./cmd/nocmt"
             end
           
             test do
@@ -166,16 +166,14 @@ jobs:
           echo "New version: $NEW_VERSION"
           
           # Create a new version.go file with updated version
-          cat > version.go << EOL
-          // Package main contains the version information for nocmt
-          package main
+          cat > internal/cli/version.go << EOL
+          package cli
 
-          // Version is the current version of nocmt
           var Version = "${NEW_VERSION}"
           EOL
           
           # Stage and commit the updated file on release branch
-          git add version.go
+          git add internal/cli/version.go
           git commit -m "Bump version to $NEW_VERSION"
           git push origin release
       

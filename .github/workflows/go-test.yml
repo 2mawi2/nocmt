@@ -32,7 +32,7 @@ jobs:
         sudo apt-get install -y pkg-config gcc g++ make
 
     - name: Build
-      run: go build -v -ldflags="-s -w -X main.Version=test" ./...
+      run: go build -v -ldflags="-s -w -X nocmt/internal/cli.Version=test" ./cmd/nocmt
 
     - name: Run Tests
       run: go test -v ./...

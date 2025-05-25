@@ -9,7 +9,7 @@ import (
 func TestPythonProcessor_FileBased(t *testing.T) {
 	t.Run("Default_PreserveDirectives", func(t *testing.T) {
 		pyProc := NewPythonSingleProcessor(true)
-		RunFileBasedTestCaseNormalized(t, pyProc, "../testdata/python/original.py", "../testdata/python/expected.py")
+		RunFileBasedTestCaseNormalized(t, pyProc, "../../testdata/python/original.py", "../../testdata/python/expected.py")
 	})
 	t.Run("RemoveAll_NoDirectives", func(t *testing.T) {
 		pyProc := NewPythonSingleProcessor(false)

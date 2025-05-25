@@ -9,7 +9,7 @@ import (
 func TestJavaScriptProcessor_FileBased(t *testing.T) {
 	t.Run("WithDirectives", func(t *testing.T) {
 		processor := NewJavaScriptProcessor(true)
-		RunFileBasedTestCaseNormalized(t, processor, "../testdata/javascript/original.js", "../testdata/javascript/expected.js")
+		RunFileBasedTestCaseNormalized(t, processor, "../../testdata/javascript/original.js", "../../testdata/javascript/expected.js")
 	})
 	t.Run("WithoutDirectives", func(t *testing.T) {
 		processor := NewJavaScriptProcessor(false)

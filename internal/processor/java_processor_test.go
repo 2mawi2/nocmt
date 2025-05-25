@@ -9,7 +9,7 @@ import (
 func TestJavaProcessor_FileBased(t *testing.T) {
 	t.Run("WithDirectives", func(t *testing.T) {
 		processor := NewJavaProcessor(true)
-		RunFileBasedTestCaseNormalized(t, processor, "../testdata/java/original.java", "../testdata/java/expected.java")
+		RunFileBasedTestCaseNormalized(t, processor, "../../testdata/java/original.java", "../../testdata/java/expected.java")
 	})
 	t.Run("WithoutDirectives_Simple", func(t *testing.T) {
 		processor := NewJavaProcessor(false)
@@ -26,12 +26,12 @@ public class MyClass { /* Block comment */ }`
 
 func TestJavaProcessor_Comprehensive(t *testing.T) {
 	processor := NewJavaProcessor(true)
-	RunFileBasedTestCaseNormalized(t, processor, "../testdata/java/comprehensive_original.java", "../testdata/java/comprehensive_expected.java")
+	RunFileBasedTestCaseNormalized(t, processor, "../../testdata/java/comprehensive_original.java", "../../testdata/java/comprehensive_expected.java")
 }
 
 func TestJavaProcessor_EdgeCases(t *testing.T) {
 	processor := NewJavaProcessor(true)
-	RunFileBasedTestCaseNormalized(t, processor, "../testdata/java/edge_cases_original.java", "../testdata/java/edge_cases_expected.java")
+	RunFileBasedTestCaseNormalized(t, processor, "../../testdata/java/edge_cases_original.java", "../../testdata/java/edge_cases_expected.java")
 }
 
 func TestJavaProcessorGetLanguageName(t *testing.T) {

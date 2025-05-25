@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nocmt/config"
+	"nocmt/internal/config"
 )
 
 type LanguageProcessor interface {

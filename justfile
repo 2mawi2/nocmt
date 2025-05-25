@@ -2,7 +2,7 @@ default:
     @just --list
 
 build:
-    go build -o nocmt
+    go build -o nocmt ./cmd/nocmt
 
 test:
     go test ./...
@@ -11,7 +11,7 @@ lint:
     golangci-lint run ./...
 
 run *args:
-    go run main.go {{args}}
+    go run ./cmd/nocmt {{args}}
 
 clean:
     rm -f nocmt 

@@ -2,7 +2,7 @@ package processor
 
 import (
 	"fmt"
-	"nocmt/config"
+	"nocmt/internal/config"
 	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"

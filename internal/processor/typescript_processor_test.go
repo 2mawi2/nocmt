@@ -10,7 +10,7 @@ import (
 func TestTypeScriptStripComments(t *testing.T) {
 	t.Run("FileBased", func(t *testing.T) {
 		processor := NewTypeScriptProcessor(true)
-		RunFileBasedTestCaseNormalized(t, processor, "../testdata/typescript/original.ts", "../testdata/typescript/expected.ts")
+		RunFileBasedTestCaseNormalized(t, processor, "../../testdata/typescript/original.ts", "../../testdata/typescript/expected.ts")
 	})
 
 	tests := []struct {

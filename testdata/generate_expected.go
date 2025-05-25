@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"nocmt/processor"
+	"nocmt/internal/processor"
 )
 
 func main() {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"nocmt/config"
+	"nocmt/internal/config"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )

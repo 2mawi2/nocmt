@@ -9,7 +9,7 @@ import (
 func TestCSharpProcessor_FileBased(t *testing.T) {
 	t.Run("Default_PreserveDirectives", func(t *testing.T) {
 		csharpProc := NewCSharpSingleProcessor(true)
-		RunFileBasedTestCaseNormalized(t, csharpProc, "../testdata/csharp/original.cs", "../testdata/csharp/expected.cs")
+		RunFileBasedTestCaseNormalized(t, csharpProc, "../../testdata/csharp/original.cs", "../../testdata/csharp/expected.cs")
 	})
 	t.Run("RemoveAll_NoDirectives", func(t *testing.T) {
 		csharpProc := NewCSharpSingleProcessor(false)
@@ -23,7 +23,7 @@ public class Test {} // A comment`
 	})
 	t.Run("No_Line_Artifacts_When_No_Comments", func(t *testing.T) {
 		csharpProc := NewCSharpSingleProcessor(true)
-		RunFileBasedTestCaseNormalized(t, csharpProc, "../testdata/csharp/original_noline_artifacts.cs", "../testdata/csharp/expected_no_line_artifacts.cs")
+		RunFileBasedTestCaseNormalized(t, csharpProc, "../../testdata/csharp/original_noline_artifacts.cs", "../../testdata/csharp/expected_no_line_artifacts.cs")
 	})
 	t.Run("BlockCommentsPreserved", func(t *testing.T) {
 		proc := NewCSharpSingleProcessor(false)

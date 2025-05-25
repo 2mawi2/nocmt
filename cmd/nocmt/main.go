@@ -11,9 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"nocmt/config"
-	"nocmt/processor"
-	"nocmt/walker"
+	"nocmt/internal/cli"
+	"nocmt/internal/config"
+	"nocmt/internal/processor"
+	"nocmt/internal/walker"
 )
 
 func main() {
@@ -64,7 +65,7 @@ func main() {
 
 	args := flag.Args()
 	if len(args) > 0 && (args[0] == "install-hooks" || args[0] == "install") {
-		err := InstallPreCommitHook(verbose)
+		err := cli.InstallPreCommitHook(verbose)
 		if err != nil {
 			fmt.Printf("Error installing pre-commit hook: %v\n", err)
 			os.Exit(1)
@@ -74,7 +75,7 @@ func main() {
 	}
 
 	if showVersion {
-		fmt.Printf("nocmt version %s\n", Version)
+		fmt.Printf("nocmt version %s\n", cli.Version)
 		return
 	}
 
@@ -176,7 +177,7 @@ func main() {
 	}
 
 	if staged {
-		if !isGitRepo() {
+		if !cli.IsGitRepo() {
 			fmt.Println("Error: can only process staged files inside a git repository")
 			os.Exit(1)
 		}

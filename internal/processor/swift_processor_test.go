@@ -9,7 +9,7 @@ import (
 func TestSwiftProcessor_FileBased(t *testing.T) {
 	t.Run("WithDirectives", func(t *testing.T) {
 		processor := NewSwiftProcessor(true)
-		RunFileBasedTestCaseNormalized(t, processor, "../testdata/swift/original.swift", "../testdata/swift/expected.swift")
+		RunFileBasedTestCaseNormalized(t, processor, "../../testdata/swift/original.swift", "../../testdata/swift/expected.swift")
 	})
 	t.Run("WithoutDirectives_Simple", func(t *testing.T) {
 		processor := NewSwiftProcessor(false)

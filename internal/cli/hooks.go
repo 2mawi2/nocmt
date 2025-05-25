@@ -1,7 +1,6 @@
-package main
+package cli
 
 import (
-	_ "embed"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,11 +8,36 @@ import (
 	"strings"
 )
 
-//go:embed pre-commit
-var preCommitHookContent []byte
+const preCommitHookContent = `#!/bin/sh
+#
+# pre-commit hook that runs nocmt on staged files
+#
+
+# Exit on error
+set -e
+
+# Check if nocmt is in PATH, otherwise use the local binary
+NOCMT_CMD="./nocmt"
+if [ ! -x "$NOCMT_CMD" ]; then
+    NOCMT_CMD="nocmt"
+    if ! command -v $NOCMT_CMD >/dev/null 2>&1; then
+        echo "Error: nocmt not found in PATH or current directory"
+        echo "Please build the nocmt binary first or add it to your PATH"
+        exit 1
+    fi
+fi
+
+echo "Running nocmt to remove comments from staged files..."
+
+# Use the --staged flag to process all staged files at once
+$NOCMT_CMD --staged --verbose
+
+# Exit with success status
+exit 0
+`
 
 func InstallPreCommitHook(verbose bool) error {
-	if !isGitRepo() {
+	if !IsGitRepo() {
 		return fmt.Errorf("not a git repository (or any of the parent directories)")
 	}
 
@@ -44,7 +68,7 @@ func InstallPreCommitHook(verbose bool) error {
 		}
 	}
 
-	err = os.WriteFile(hookPath, preCommitHookContent, 0755)
+	err = os.WriteFile(hookPath, []byte(preCommitHookContent), 0755)
 	if err != nil {
 		return fmt.Errorf("failed to write hook file: %w", err)
 	}

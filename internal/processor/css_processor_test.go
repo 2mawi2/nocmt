@@ -9,7 +9,7 @@ import (
 func TestCSSProcessor(t *testing.T) {
 	t.Run("FileBasedTestCase", func(t *testing.T) {
 		processor := NewCSSProcessor(true)
-		RunFileBasedTestCaseVeryLenient(t, processor, "../testdata/css/original.css", "../testdata/css/expected.css")
+		RunFileBasedTestCaseVeryLenient(t, processor, "../../testdata/css/original.css", "../../testdata/css/expected.css")
 	})
 
 	t.Run("EmptyInput", func(t *testing.T) {
