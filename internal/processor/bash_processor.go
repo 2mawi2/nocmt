@@ -4,7 +4,6 @@ import (
 	"regexp"
 	"strings"
 
-	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/bash"
 )
 
@@ -35,8 +34,9 @@ func (p *BashProcessor) StripComments(source string) (string, error) {
 		shebang = lines[0]
 	}
 
-	parser := sitter.NewParser()
-	parser.SetLanguage(bash.GetLanguage())
+	parser := parsers.Get(bash.GetLanguage())
+	defer parsers.Put(bash.GetLanguage(), parser)
+
 	commentRanges, err := parseCode(parser, source)
 	if err != nil {
 		return "", err

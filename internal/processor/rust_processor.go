@@ -14,17 +14,43 @@ type RustSingleProcessor struct {
 
 func isRustSingleLineCommentNode(node *sitter.Node, sourceText string) bool {
 	if node.Type() == "comment" || node.Type() == "line_comment" {
-		commentText := sourceText[node.StartByte():node.EndByte()]
-		trimmed := strings.TrimSpace(commentText)
-		if strings.HasPrefix(trimmed, "//") && !strings.HasPrefix(trimmed, "///") && !strings.HasPrefix(trimmed, "//!") {
-			lineStart := strings.LastIndex(sourceText[:node.StartByte()], "\n") + 1
-			prefix := sourceText[lineStart:node.StartByte()]
-			if strings.TrimSpace(prefix) == "" {
-				return true
+		startByte := int(node.StartByte())
+		endByte := int(node.EndByte())
+
+		
+		if endByte-startByte >= 2 && sourceText[startByte] == '/' && sourceText[startByte+1] == '/' {
+			
+			if endByte-startByte >= 3 {
+				thirdChar := sourceText[startByte+2]
+				if thirdChar == '/' || thirdChar == '!' {
+					return false
+				}
 			}
+
+			
+			lineStart := findLineStartBeforePosition(sourceText, startByte)
+			return isOnlyWhitespaceBeforePosition(sourceText, lineStart, startByte)
 		}
 	}
 	return false
+}
+
+func findLineStartBeforePosition(text string, pos int) int {
+	for i := pos - 1; i >= 0; i-- {
+		if text[i] == '\n' {
+			return i + 1
+		}
+	}
+	return 0
+}
+
+func isOnlyWhitespaceBeforePosition(text string, start, end int) bool {
+	for i := start; i < end; i++ {
+		if text[i] != ' ' && text[i] != '\t' {
+			return false
+		}
+	}
+	return true
 }
 
 func isRustDirective(line string) bool {

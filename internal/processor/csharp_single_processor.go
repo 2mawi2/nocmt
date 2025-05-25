@@ -1,7 +1,6 @@
 package processor
 
 import (
-	"context"
 	"regexp"
 	"strings"
 
@@ -19,105 +18,6 @@ func checkCSharpDirective(line string) bool {
 	return csharpDirectiveRegex.MatchString(line)
 }
 
-func handleBlockComments(source string) (string, error) {
-	parser := sitter.NewParser()
-	parser.SetLanguage(csharp.GetLanguage())
-
-	tree, err := parser.ParseCtx(context.Background(), nil, []byte(source))
-	if err != nil {
-		return source, err
-	}
-	defer tree.Close()
-
-	var blockCommentRanges []CommentRange
-
-	Walk(tree.RootNode(), func(node *sitter.Node) bool {
-		if node.Type() == "comment" {
-			commentText := source[node.StartByte():node.EndByte()]
-			trimmedText := strings.TrimSpace(commentText)
-			if strings.HasPrefix(trimmedText, "/*") && strings.HasSuffix(trimmedText, "*/") {
-				blockCommentRanges = append(blockCommentRanges, CommentRange{
-					StartByte: node.StartByte(),
-					EndByte:   node.EndByte(),
-				})
-				return false
-			}
-		}
-		return true
-	})
-
-	for i := range blockCommentRanges {
-		for j := i + 1; j < len(blockCommentRanges); j++ {
-			if blockCommentRanges[i].StartByte < blockCommentRanges[j].StartByte {
-				blockCommentRanges[i], blockCommentRanges[j] = blockCommentRanges[j], blockCommentRanges[i]
-			}
-		}
-	}
-
-	resultBytes := []byte(source)
-	for _, r := range blockCommentRanges {
-		start := int(r.StartByte)
-		end := int(r.EndByte)
-
-		if start >= len(resultBytes) || end > len(resultBytes) || start > end {
-			continue
-		}
-
-		resultBytes = append(resultBytes[:start], resultBytes[end:]...)
-	}
-
-	return string(resultBytes), nil
-}
-
-func postProcessCSharpSingleLine(source string, preserveDirectives bool) (string, error) {
-
-	originalLines := strings.Split(source, "\n")
-	processedSource := source
-	if !preserveDirectives {
-		var err error
-		processedSource, err = handleBlockComments(source)
-		if err != nil {
-			return source, err
-		}
-	}
-
-	lines := strings.Split(processedSource, "\n")
-	var resultLines []string
-
-	for i, line := range lines {
-		trimmedLine := strings.TrimSpace(line)
-
-		if strings.HasPrefix(trimmedLine, "///") && !preserveDirectives {
-			continue
-		}
-
-		if strings.HasPrefix(strings.TrimSpace(line), "#") && !preserveDirectives {
-			continue
-		}
-
-		if preserveDirectives && checkCSharpDirective(line) && !strings.Contains(line, "//") {
-			if i < len(originalLines) {
-				if idx := strings.Index(originalLines[i], "//"); idx != -1 {
-					inline := originalLines[i][idx:]
-					line = strings.TrimRight(line, " \t") + "  " + inline
-				}
-			}
-		}
-
-		isBlankLine := trimmedLine == ""
-
-		if isBlankLine {
-			if i > 0 {
-				resultLines = append(resultLines, line)
-			}
-		} else {
-			resultLines = append(resultLines, line)
-		}
-	}
-
-	return strings.Join(resultLines, "\n"), nil
-}
-
 func NewCSharpSingleProcessor(preserveDirectivesFlag bool) *CSharpSingleProcessor {
 	isSLCommentNode := func(node *sitter.Node, sourceText string) bool {
 		if node.Type() != "comment" {
@@ -125,9 +25,10 @@ func NewCSharpSingleProcessor(preserveDirectivesFlag bool) *CSharpSingleProcesso
 		}
 		commentText := sourceText[node.StartByte():node.EndByte()]
 		trimmedText := strings.TrimSpace(commentText)
+
+		
 		if strings.HasPrefix(trimmedText, "//") && !strings.HasPrefix(trimmedText, "///") {
 			if preserveDirectivesFlag {
-
 				start := int(node.StartByte())
 				lineStart := strings.LastIndex(sourceText[:start], "\n")
 				if lineStart == -1 {
@@ -142,21 +43,47 @@ func NewCSharpSingleProcessor(preserveDirectivesFlag bool) *CSharpSingleProcesso
 			}
 			return true
 		}
+
+		
 		return false
 	}
+
+	
+	simplifiedPostProcess := func(source string, preserveDirectives bool) (string, error) {
+		lines := strings.Split(source, "\n")
+		var resultLines []string
+
+		for _, line := range lines {
+			trimmedLine := strings.TrimSpace(line)
+
+			
+			if strings.HasPrefix(trimmedLine, "///") && !preserveDirectives {
+				continue
+			}
+
+			
+			if strings.HasPrefix(trimmedLine, "#") && !preserveDirectives {
+				continue
+			}
+
+			resultLines = append(resultLines, line)
+		}
+
+		return strings.Join(resultLines, "\n"), nil
+	}
+
 	singleLineCore := NewSingleLineCoreProcessor(
 		"csharp",
 		csharp.GetLanguage(),
 		isSLCommentNode,
 		checkCSharpDirective,
-		postProcessCSharpSingleLine,
+		simplifiedPostProcess,
 	).WithPreserveDirectives(preserveDirectivesFlag).PreserveBlankRuns()
 
 	return &CSharpSingleProcessor{
 		SingleLineCoreProcessor: singleLineCore,
 	}
 }
-
 
 func (p *CSharpSingleProcessor) StripComments(source string) (string, error) {
 	cleaned, err := p.SingleLineCoreProcessor.StripComments(source)

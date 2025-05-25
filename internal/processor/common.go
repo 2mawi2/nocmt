@@ -208,7 +208,7 @@ func splitLargeStringIntoLinesManually(sourceCode string) []string {
 			currentLineStart = currentPos + 1
 		} else if isWindowsNewline(sourceCode, currentPos) {
 			lines = appendLineFromRange(lines, sourceCode, currentLineStart, currentPos)
-			currentPos++ 
+			currentPos++
 			currentLineStart = currentPos + 1
 		}
 	}
