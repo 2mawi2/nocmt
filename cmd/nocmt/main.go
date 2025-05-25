@@ -212,12 +212,6 @@ func main() {
 	os.Exit(1)
 }
 
-func isGitRepo() bool {
-	cmd := exec.Command("git", "rev-parse", "--is-inside-work-tree")
-	err := cmd.Run()
-	return err == nil
-}
-
 func getStagedFiles() ([]string, error) {
 	cmd := exec.Command("git", "diff", "--cached", "--name-only", "--diff-filter=ACM")
 	out, err := cmd.Output()
