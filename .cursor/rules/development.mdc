@@ -18,6 +18,7 @@ alwaysApply: true
 *   macOS Focus: Remember this is a macOS-only application. Use appropriate macOS APIs and conventions (AppKit, SwiftUI for macOS).
 *   SwiftData: Use SwiftData correctly for data persistence, especially concerning `@MainActor` for UI updates when interacting with the `ModelContext`.
 *   Concurrency: Use Swift Concurrency (`async`/`await`, Actors) appropriately, especially for background tasks like transcription and network requests. Pay attention to thread safety, particularly around `WhisperContext`.
+* Prefer to write self documenting code, that explains itself.
 
 BEFORE ANY CODE CHANGE:
 1. Read and understand the relevant files using read_file

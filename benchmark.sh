@@ -3,39 +3,46 @@ set -e
 
 cd "$(dirname "$0")"
 
-BENCH_DIR="./benchmarks"
-mkdir -p "$BENCH_DIR"
+BENCHMARKS_DIRECTORY="./benchmarks"
+mkdir -p "$BENCHMARKS_DIRECTORY"
 
-SCRIPT_DIR="$(pwd)"
-BENCH_DIR="$SCRIPT_DIR/benchmarks"
+SCRIPT_ROOT_DIRECTORY="$(pwd)"
+BENCHMARKS_DIRECTORY="$SCRIPT_ROOT_DIRECTORY/benchmarks"
 
-BASELINE="$BENCH_DIR/baseline.txt"
-TODAY=$(date +"%Y-%m-%d")
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-NEW_RESULT="$BENCH_DIR/bench_${TIMESTAMP}.txt"
-LATEST="$BENCH_DIR/latest.txt"
-HISTORY="$BENCH_DIR/history.txt"
+BASELINE_RESULTS_FILE="$BENCHMARKS_DIRECTORY/baseline.txt"
+TODAY_DATE=$(date +"%Y-%m-%d")
+CURRENT_TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+NEW_BENCHMARK_RESULTS="$BENCHMARKS_DIRECTORY/bench_${CURRENT_TIMESTAMP}.txt"
+LATEST_RESULTS_FILE="$BENCHMARKS_DIRECTORY/latest.txt"
+BENCHMARK_HISTORY_FILE="$BENCHMARKS_DIRECTORY/history.txt"
 
-run_benchmarks() {
+run_full_benchmark_suite() {
     echo "Running benchmarks..."
-    cd "$SCRIPT_DIR/internal/processor" && go test -run='^$' -bench=. -benchmem -count=3 -benchtime=0.5s > "$1"
+    cd "$SCRIPT_ROOT_DIRECTORY/internal/processor" && go test -run='^$' -bench=. -benchmem -count=3 -benchtime=0.5s > "$1"
     echo "Benchmarks saved to $1"
-    cd "$SCRIPT_DIR"
+    cd "$SCRIPT_ROOT_DIRECTORY"
 }
 
-run_quick_benchmarks() {
+run_quick_benchmark_subset() {
     echo "Running quick benchmarks..."
-    cd "$SCRIPT_DIR/internal/processor" && go test -run='^$' -bench='BenchmarkGoStripComments|BenchmarkGoRealWorldCode|BenchmarkGoMemoryUsage' -benchmem -count=1 -benchtime=0.2s > "$1"
+    cd "$SCRIPT_ROOT_DIRECTORY/internal/processor" && go test -run='^$' -bench='BenchmarkGoStripComments|BenchmarkGoRealWorldCode|BenchmarkGoMemoryUsage|BenchmarkGoVeryLargeFiles' -benchmem -count=1 -benchtime=0.2s > "$1"
     echo "Quick benchmarks saved to $1"
-    cd "$SCRIPT_DIR"
+    cd "$SCRIPT_ROOT_DIRECTORY"
 }
 
-add_to_history() {
-    echo "=== Benchmark run: $(date) ===" >> "$HISTORY"
-    echo "File: $1" >> "$HISTORY"
+append_benchmark_results_to_history() {
+    benchmark_results_file="$1"
+    echo "=== Benchmark run: $(date) ===" >> "$BENCHMARK_HISTORY_FILE"
+    echo "File: $benchmark_results_file" >> "$BENCHMARK_HISTORY_FILE"
     
-    echo "Summary:" >> "$HISTORY"
-    grep -E "Benchmark(GoStripComments|GoRealWorldCode|GoMemoryUsage)" "$1" | awk '
+    echo "Summary:" >> "$BENCHMARK_HISTORY_FILE"
+    extract_key_benchmark_metrics_for_history "$benchmark_results_file"
+    echo "" >> "$BENCHMARK_HISTORY_FILE"
+}
+
+extract_key_benchmark_metrics_for_history() {
+    benchmark_file="$1"
+    grep -E "Benchmark(GoStripComments|GoRealWorldCode|GoMemoryUsage)" "$benchmark_file" | awk '
         { 
             if ($1 ~ /BenchmarkGoStripComments\/LargeCode/) {
                 printf "  Large code: %.2f ms/op, %.2f MB memory, %d allocs/op\n", 
@@ -48,9 +55,7 @@ add_to_history() {
                     $3/1000000, $5/1048576, $7
             }
         }
-    ' "$1" >> "$HISTORY"
-    
-    echo "" >> "$HISTORY"
+    ' "$benchmark_file" >> "$BENCHMARK_HISTORY_FILE"
 }
 
 compare_results() {
@@ -110,26 +115,26 @@ color_diff() {
 
 case "$1" in
     run)
-        run_benchmarks "$NEW_RESULT"
+        run_full_benchmark_suite "$NEW_BENCHMARK_RESULTS"
         
-        cp "$NEW_RESULT" "$BASELINE"
-        cp "$NEW_RESULT" "$LATEST"
+        cp "$NEW_BENCHMARK_RESULTS" "$BASELINE_RESULTS_FILE"
+        cp "$NEW_BENCHMARK_RESULTS" "$LATEST_RESULTS_FILE"
         
-        add_to_history "$NEW_RESULT"
+        append_benchmark_results_to_history "$NEW_BENCHMARK_RESULTS"
         
         echo "New baseline established."
         ;;
         
     quick)
-        run_quick_benchmarks "$NEW_RESULT"
+        run_quick_benchmark_subset "$NEW_BENCHMARK_RESULTS"
         
-        cp "$NEW_RESULT" "$LATEST"
+        cp "$NEW_BENCHMARK_RESULTS" "$LATEST_RESULTS_FILE"
         
-        add_to_history "$NEW_RESULT"
+        append_benchmark_results_to_history "$NEW_BENCHMARK_RESULTS"
         
         echo ""
         echo "Quick benchmark results:"
-        grep -E "Benchmark(GoStripComments|GoRealWorldCode|GoMemoryUsage)" "$NEW_RESULT" | awk '
+        grep -E "Benchmark(GoStripComments|GoRealWorldCode|GoMemoryUsage|GoVeryLargeFiles)" "$NEW_BENCHMARK_RESULTS" | awk '
             { 
                 if ($1 ~ /BenchmarkGoStripComments\/LargeCode/) {
                     printf "  Large code: %.2f ms/op, %.2f MB memory, %d allocs/op\n", 
@@ -140,13 +145,19 @@ case "$1" in
                 } else if ($1 ~ /BenchmarkGoMemoryUsage/) {
                     printf "  Memory usage: %.2f ms/op, %.2f MB memory, %d allocs/op\n", 
                         $3/1000000, $5/1048576, $7
+                } else if ($1 ~ /BenchmarkGoVeryLargeFiles\/1000Lines/) {
+                    printf "  1000 lines: %.2f ms/op, %.2f MB memory, %d allocs/op\n", 
+                        $3/1000000, $5/1048576, $7
+                } else if ($1 ~ /BenchmarkGoVeryLargeFiles\/5000Lines/) {
+                    printf "  5000 lines: %.2f ms/op, %.2f MB memory, %d allocs/op\n", 
+                        $3/1000000, $5/1048576, $7
                 }
             }
-        ' "$NEW_RESULT"
+        ' "$NEW_BENCHMARK_RESULTS"
         ;;
         
     compare)
-        COMPARE_WITH="$BASELINE"
+        COMPARE_WITH="$BASELINE_RESULTS_FILE"
         if [ ! -z "$2" ]; then
             COMPARE_WITH="$2"
         fi
@@ -157,18 +168,18 @@ case "$1" in
             exit 1
         fi
         
-        run_benchmarks "$NEW_RESULT"
-        cp "$NEW_RESULT" "$LATEST"
+        run_full_benchmark_suite "$NEW_BENCHMARK_RESULTS"
+        cp "$NEW_BENCHMARK_RESULTS" "$LATEST_RESULTS_FILE"
         
-        add_to_history "$NEW_RESULT"
+        append_benchmark_results_to_history "$NEW_BENCHMARK_RESULTS"
         
         echo ""
-        compare_results "$COMPARE_WITH" "$NEW_RESULT"
+        compare_results "$COMPARE_WITH" "$NEW_BENCHMARK_RESULTS"
         ;;
         
     history)
-        if [ -f "$HISTORY" ]; then
-            cat "$HISTORY"
+        if [ -f "$BENCHMARK_HISTORY_FILE" ]; then
+            cat "$BENCHMARK_HISTORY_FILE"
         else
             echo "No benchmark history found."
             echo "Run './benchmark.sh run' to establish a baseline."

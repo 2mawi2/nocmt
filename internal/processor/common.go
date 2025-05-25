@@ -182,8 +182,63 @@ func PreserveOriginalTrailingNewline(original, cleaned string) string {
 	return cleaned
 }
 
-func splitIntoLines(s string) []string {
-	return lineRegexp.Split(s, -1)
+func splitIntoLines(sourceCode string) []string {
+	if shouldUseFastPathForSmallStrings(sourceCode) {
+		return strings.Split(sourceCode, "\n")
+	}
+
+	return splitLargeStringIntoLinesManually(sourceCode)
+}
+
+func shouldUseFastPathForSmallStrings(sourceCode string) bool {
+	const smallStringThreshold = 100
+	return len(sourceCode) < smallStringThreshold
+}
+
+func splitLargeStringIntoLinesManually(sourceCode string) []string {
+	const estimatedCharsPerLine = 50
+	estimatedLineCount := len(sourceCode) / estimatedCharsPerLine
+	lines := make([]string, 0, estimatedLineCount)
+
+	currentLineStart := 0
+
+	for currentPos := 0; currentPos < len(sourceCode); currentPos++ {
+		if isUnixNewline(sourceCode, currentPos) {
+			lines = appendLineFromRange(lines, sourceCode, currentLineStart, currentPos)
+			currentLineStart = currentPos + 1
+		} else if isWindowsNewline(sourceCode, currentPos) {
+			lines = appendLineFromRange(lines, sourceCode, currentLineStart, currentPos)
+			currentPos++ 
+			currentLineStart = currentPos + 1
+		}
+	}
+
+	return appendRemainingContentAsLastLine(lines, sourceCode, currentLineStart)
+}
+
+func isUnixNewline(sourceCode string, position int) bool {
+	return sourceCode[position] == '\n'
+}
+
+func isWindowsNewline(sourceCode string, position int) bool {
+	return sourceCode[position] == '\r' &&
+		position+1 < len(sourceCode) &&
+		sourceCode[position+1] == '\n'
+}
+
+func appendLineFromRange(lines []string, sourceCode string, startPos, endPos int) []string {
+	return append(lines, sourceCode[startPos:endPos])
+}
+
+func appendRemainingContentAsLastLine(lines []string, sourceCode string, lastLineStart int) []string {
+	if hasRemainingContent(sourceCode, lastLineStart) {
+		lines = append(lines, sourceCode[lastLineStart:])
+	}
+	return lines
+}
+
+func hasRemainingContent(sourceCode string, startPosition int) bool {
+	return startPosition < len(sourceCode)
 }
 
 func calculateLinePositions(lines []string) []int {
@@ -195,8 +250,6 @@ func calculateLinePositions(lines []string) []int {
 	}
 	return positions
 }
-
-var lineRegexp = regexp.MustCompile(`\r?\n`)
 
 func normalizeText(s string) string {
 	s = strings.ReplaceAll(s, "\r\n", "\n")

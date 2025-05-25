@@ -675,3 +675,82 @@ func main() {
 		}
 	}
 }
+
+func BenchmarkGoVeryLargeFiles(b *testing.B) {
+	fileSizeConfigurations := []struct {
+		testName    string
+		targetLines int
+	}{
+		{"1000Lines", 1000},
+		{"2000Lines", 2000},
+		{"5000Lines", 5000},
+	}
+
+	for _, sizeConfig := range fileSizeConfigurations {
+		b.Run(sizeConfig.testName, func(b *testing.B) {
+			generatedGoCode := generateRealisticGoCodeWithTargetLineCount(sizeConfig.targetLines)
+
+			goProcessor := createGoProcessorForBenchmark(b)
+
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_, err := goProcessor.StripComments(generatedGoCode)
+				if err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
+func generateRealisticGoCodeWithTargetLineCount(targetLineCount int) string {
+	var codeBuilder strings.Builder
+
+	addPackageDeclarationAndImports(&codeBuilder)
+
+	functionsToGenerate := calculateFunctionCountForTargetLines(targetLineCount)
+	for i := 0; i < functionsToGenerate; i++ {
+		addBusinessLogicFunction(&codeBuilder, i)
+	}
+
+	return codeBuilder.String()
+}
+
+func addPackageDeclarationAndImports(builder *strings.Builder) {
+	builder.WriteString("package main\n\n")
+	builder.WriteString("import (\n")
+	builder.WriteString("\t\"fmt\"\n")
+	builder.WriteString("\t\"strings\"\n")
+	builder.WriteString("\t\"context\"\n")
+	builder.WriteString(")\n\n")
+}
+
+func calculateFunctionCountForTargetLines(targetLines int) int {
+	const averageLinesPerFunction = 10
+	return targetLines / averageLinesPerFunction
+}
+
+func addBusinessLogicFunction(builder *strings.Builder, functionIndex int) {
+	fmt.Fprintf(builder, "// Function %d performs important business logic\n", functionIndex)
+	fmt.Fprintf(builder, "// This function handles case %d specifically\n", functionIndex)
+	fmt.Fprintf(builder, "func processData%d(input string) (string, error) {\n", functionIndex)
+	builder.WriteString("\t// Validate input parameters\n")
+	builder.WriteString("\tif input == \"\" {\n")
+	builder.WriteString("\t\t// Return error for empty input\n")
+	builder.WriteString("\t\treturn \"\", fmt.Errorf(\"empty input\")\n")
+	builder.WriteString("\t}\n")
+	builder.WriteString("\t\n")
+	builder.WriteString("\t// Process the input data\n")
+	fmt.Fprintf(builder, "\tresult := fmt.Sprintf(\"processed_%%s_%d\", input) // Format result\n", functionIndex)
+	builder.WriteString("\treturn result, nil // Return success\n")
+	builder.WriteString("}\n\n")
+}
+
+func createGoProcessorForBenchmark(b *testing.B) LanguageProcessor {
+	factory := NewProcessorFactory()
+	processor, err := factory.GetProcessor("go")
+	if err != nil {
+		b.Fatal(err)
+	}
+	return processor
+}
