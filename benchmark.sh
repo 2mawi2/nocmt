@@ -18,14 +18,14 @@ HISTORY="$BENCH_DIR/history.txt"
 
 run_benchmarks() {
     echo "Running benchmarks..."
-    cd "$SCRIPT_DIR/processor" && go test -run=^$ -bench=. -benchmem -count=3 -benchtime=0.5s > "$1"
+    cd "$SCRIPT_DIR/internal/processor" && go test -run='^$' -bench=. -benchmem -count=3 -benchtime=0.5s > "$1"
     echo "Benchmarks saved to $1"
     cd "$SCRIPT_DIR"
 }
 
 run_quick_benchmarks() {
     echo "Running quick benchmarks..."
-    cd "$SCRIPT_DIR/processor" && go test -run=^$ -bench="BenchmarkStripComments|BenchmarkParallelProcessing" -benchmem -count=1 -benchtime=0.2s > "$1"
+    cd "$SCRIPT_DIR/internal/processor" && go test -run='^$' -bench='BenchmarkGoStripComments|BenchmarkGoRealWorldCode|BenchmarkGoMemoryUsage' -benchmem -count=1 -benchtime=0.2s > "$1"
     echo "Quick benchmarks saved to $1"
     cd "$SCRIPT_DIR"
 }
@@ -35,13 +35,16 @@ add_to_history() {
     echo "File: $1" >> "$HISTORY"
     
     echo "Summary:" >> "$HISTORY"
-    grep -E "Benchmark(StripComments|ParallelProcessing)" "$1" | awk '
+    grep -E "Benchmark(GoStripComments|GoRealWorldCode|GoMemoryUsage)" "$1" | awk '
         { 
-            if ($1 ~ /BenchmarkStripComments\/LargeCode/) {
+            if ($1 ~ /BenchmarkGoStripComments\/LargeCode/) {
                 printf "  Large code: %.2f ms/op, %.2f MB memory, %d allocs/op\n", 
                     $3/1000000, $5/1048576, $7
-            } else if ($1 ~ /BenchmarkParallelProcessing/) {
-                printf "  Parallel: %.2f ms/op, %.2f MB memory, %d allocs/op\n", 
+            } else if ($1 ~ /BenchmarkGoRealWorldCode/) {
+                printf "  Real world: %.2f ms/op, %.2f MB memory, %d allocs/op\n", 
+                    $3/1000000, $5/1048576, $7
+            } else if ($1 ~ /BenchmarkGoMemoryUsage/) {
+                printf "  Memory usage: %.2f ms/op, %.2f MB memory, %d allocs/op\n", 
                     $3/1000000, $5/1048576, $7
             }
         }
@@ -126,13 +129,16 @@ case "$1" in
         
         echo ""
         echo "Quick benchmark results:"
-        grep -E "Benchmark(StripComments|ParallelProcessing)" "$NEW_RESULT" | awk '
+        grep -E "Benchmark(GoStripComments|GoRealWorldCode|GoMemoryUsage)" "$NEW_RESULT" | awk '
             { 
-                if ($1 ~ /BenchmarkStripComments\/LargeCode/) {
+                if ($1 ~ /BenchmarkGoStripComments\/LargeCode/) {
                     printf "  Large code: %.2f ms/op, %.2f MB memory, %d allocs/op\n", 
                         $3/1000000, $5/1048576, $7
-                } else if ($1 ~ /BenchmarkParallelProcessing/) {
-                    printf "  Parallel: %.2f ms/op, %.2f MB memory, %d allocs/op\n", 
+                } else if ($1 ~ /BenchmarkGoRealWorldCode/) {
+                    printf "  Real world: %.2f ms/op, %.2f MB memory, %d allocs/op\n", 
+                        $3/1000000, $5/1048576, $7
+                } else if ($1 ~ /BenchmarkGoMemoryUsage/) {
+                    printf "  Memory usage: %.2f ms/op, %.2f MB memory, %d allocs/op\n", 
                         $3/1000000, $5/1048576, $7
                 }
             }
