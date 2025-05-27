@@ -43,6 +43,7 @@ func NewProcessorFactory() *ProcessorFactory {
 	factory.Register(NewJavaProcessor(false))
 	factory.Register(NewSwiftProcessor(false))
 	factory.Register(NewCppProcessor(false))
+	factory.Register(NewPHPProcessor(false))
 
 	factory.RegisterConstructor("go", func(preserveDirectives bool) LanguageProcessor {
 		return NewGoProcessor(preserveDirectives)
@@ -79,6 +80,9 @@ func NewProcessorFactory() *ProcessorFactory {
 	})
 	factory.RegisterConstructor("cpp", func(preserveDirectives bool) LanguageProcessor {
 		return NewCppProcessor(preserveDirectives)
+	})
+	factory.RegisterConstructor("php", func(preserveDirectives bool) LanguageProcessor {
+		return NewPHPProcessor(preserveDirectives)
 	})
 
 	return factory
@@ -147,6 +151,12 @@ func (f *ProcessorFactory) GetProcessorByExtension(filename string) (LanguagePro
 		".hh":    "cpp",
 		".h++":   "cpp",
 		".h":     "cpp",
+		".php":   "php",
+		".phtml": "php",
+		".php3":  "php",
+		".php4":  "php",
+		".php5":  "php",
+		".phps":  "php",
 	}
 
 	for ext, lang := range extMap {
