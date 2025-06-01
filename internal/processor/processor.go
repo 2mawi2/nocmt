@@ -38,6 +38,7 @@ func NewProcessorFactory() *ProcessorFactory {
 	factory.Register(NewCSharpSingleProcessor(false))
 	factory.Register(NewRustProcessor(false))
 	factory.Register(NewBashProcessor(false))
+	factory.Register(NewShellProcessor(false))
 	factory.Register(NewCSSProcessor(false))
 	factory.Register(NewKotlinProcessor(false))
 	factory.Register(NewJavaProcessor(false))
@@ -65,6 +66,9 @@ func NewProcessorFactory() *ProcessorFactory {
 	})
 	factory.RegisterConstructor("bash", func(preserveDirectives bool) LanguageProcessor {
 		return NewBashProcessor(preserveDirectives)
+	})
+	factory.RegisterConstructor("shell", func(preserveDirectives bool) LanguageProcessor {
+		return NewShellProcessor(preserveDirectives)
 	})
 	factory.RegisterConstructor("css", func(preserveDirectives bool) LanguageProcessor {
 		return NewCSSProcessor(preserveDirectives)
@@ -135,6 +139,12 @@ func (f *ProcessorFactory) GetProcessorByExtension(filename string) (LanguagePro
 		".rs":    "rust",
 		".sh":    "bash",
 		".bash":  "bash",
+		".zsh":   "shell",
+		".fish":  "shell",
+		".ksh":   "shell",
+		".csh":   "shell",
+		".tcsh":  "shell",
+		".bat":   "shell",
 		".css":   "css",
 		".scss":  "css",
 		".less":  "css",
