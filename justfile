@@ -16,6 +16,12 @@ run *args:
 clean:
     rm -f nocmt 
 
+install:
+    go run ./cmd/nocmt install
+
+uninstall:
+    go run ./cmd/nocmt uninstall
+
 bench *args:
     ./benchmark.sh {{args}} 
 

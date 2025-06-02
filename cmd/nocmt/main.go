@@ -74,6 +74,16 @@ func main() {
 		return
 	}
 
+	if len(args) > 0 && (args[0] == "uninstall-hooks" || args[0] == "uninstall") {
+		err := cli.UninstallPreCommitHook(verbose)
+		if err != nil {
+			fmt.Printf("Error uninstalling pre-commit hook: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("Pre-commit hook uninstalled successfully!")
+		return
+	}
+
 	if showVersion {
 		fmt.Printf("nocmt version %s\n", cli.Version)
 		return
@@ -209,6 +219,7 @@ func main() {
 	fmt.Println("Error: No action specified")
 	fmt.Println("Usage: nocmt [path] [options]")
 	fmt.Println("       nocmt install")
+	fmt.Println("       nocmt uninstall")
 	os.Exit(1)
 }
 

@@ -79,3 +79,68 @@ func InstallPreCommitHook(verbose bool) error {
 
 	return nil
 }
+
+func UninstallPreCommitHook(verbose bool) error {
+	if !IsGitRepo() {
+		return fmt.Errorf("not a git repository (or any of the parent directories)")
+	}
+
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	output, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to find git root directory: %w", err)
+	}
+	gitRootDir := strings.TrimSpace(string(output))
+
+	hookPath := filepath.Join(gitRootDir, ".git", "hooks", "pre-commit")
+	backupPath := hookPath + ".backup"
+
+	if _, err := os.Stat(hookPath); os.IsNotExist(err) {
+		if verbose {
+			fmt.Println("No pre-commit hook found to uninstall")
+		}
+		return nil
+	}
+
+	content, err := os.ReadFile(hookPath)
+	if err != nil {
+		return fmt.Errorf("failed to read pre-commit hook: %w", err)
+	}
+
+	contentStr := string(content)
+	if !strings.Contains(contentStr, "nocmt") || !strings.Contains(contentStr, "pre-commit hook that runs nocmt") {
+		return fmt.Errorf("pre-commit hook does not appear to be installed by nocmt - refusing to remove it for safety")
+	}
+
+	if verbose {
+		fmt.Printf("Removing nocmt pre-commit hook from %s\n", hookPath)
+	}
+
+	err = os.Remove(hookPath)
+	if err != nil {
+		return fmt.Errorf("failed to remove pre-commit hook: %w", err)
+	}
+
+	if _, err := os.Stat(backupPath); err == nil {
+		if verbose {
+			fmt.Printf("Restoring backed up pre-commit hook from %s\n", backupPath)
+		}
+		err = os.Rename(backupPath, hookPath)
+		if err != nil {
+			return fmt.Errorf("failed to restore backup hook: %w", err)
+		}
+		if verbose {
+			fmt.Println("Backup pre-commit hook restored successfully")
+		}
+	} else {
+		if verbose {
+			fmt.Println("No backup hook found to restore")
+		}
+	}
+
+	if verbose {
+		fmt.Println("Pre-commit hook uninstalled successfully")
+	}
+
+	return nil
+}
