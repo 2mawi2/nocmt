@@ -117,3 +117,79 @@ func TestBashDirectiveDetection(t *testing.T) {
 		assert.False(t, processor.isBashDirective(nonDirective), "Should not detect: %s", nonDirective)
 	}
 }
+
+func TestBashProcessorComplexCaseStatement(t *testing.T) {
+	t.Run("ComplexCasePatternWithQuotedPipes", func(t *testing.T) {
+		const bashWithComplexCase = `#!/usr/bin/env sh
+# Session management for para
+
+# Load session information from state file
+get_session_info() {
+  SESSION_ID="$1"
+  STATE_FILE="$STATE_DIR/$SESSION_ID.state"
+  [ -f "$STATE_FILE" ] || die "session '$SESSION_ID' not found"
+
+  # Read state file with backward compatibility
+  STATE_CONTENT=$(cat "$STATE_FILE")
+  case "$STATE_CONTENT" in
+  *"|"*"|"*"|"*)
+    # New format with merge mode
+    IFS='|' read -r TEMP_BRANCH WORKTREE_DIR BASE_BRANCH MERGE_MODE <"$STATE_FILE"
+    ;;
+  *)
+    # Old format without merge mode, default to squash
+    IFS='|' read -r TEMP_BRANCH WORKTREE_DIR BASE_BRANCH <"$STATE_FILE"
+    MERGE_MODE="squash"
+    ;;
+  esac
+}
+`
+
+		const expected = `#!/usr/bin/env sh
+
+get_session_info() {
+  SESSION_ID="$1"
+  STATE_FILE="$STATE_DIR/$SESSION_ID.state"
+  [ -f "$STATE_FILE" ] || die "session '$SESSION_ID' not found"
+
+  STATE_CONTENT=$(cat "$STATE_FILE")
+  case "$STATE_CONTENT" in
+  *"|"*"|"*"|"*)
+    IFS='|' read -r TEMP_BRANCH WORKTREE_DIR BASE_BRANCH MERGE_MODE <"$STATE_FILE"
+    ;;
+  *)
+    IFS='|' read -r TEMP_BRANCH WORKTREE_DIR BASE_BRANCH <"$STATE_FILE"
+    MERGE_MODE="squash"
+    ;;
+  esac
+}
+`
+
+		processor := NewBashProcessor(false)
+		result, err := processor.StripComments(bashWithComplexCase)
+		assert.NoError(t, err, "Should parse complex case statement without syntax error")
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("FallbackHandlesQuotedHashes", func(t *testing.T) {
+		const bashWithQuotedHashes = `#!/bin/bash
+# This is a comment
+echo "This # is not a comment"
+echo 'This # is also not a comment'
+VAR="value # with hash" # This is a comment
+echo "Escaped \" quote # still not a comment" # But this is
+`
+
+		const expected = `#!/bin/bash
+echo "This # is not a comment"
+echo 'This # is also not a comment'
+VAR="value # with hash"
+echo "Escaped \" quote # still not a comment"
+`
+
+		processor := NewBashProcessor(false)
+		result, err := processor.StripComments(bashWithQuotedHashes)
+		assert.NoError(t, err)
+		assert.Equal(t, expected, result)
+	})
+}
