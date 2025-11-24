@@ -24,7 +24,7 @@ jobs:
       tag: ${{ steps.version.outputs.tag }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout homebrew tap repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: 2mawi2/homebrew-tap
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -140,7 +140,7 @@ jobs:
     if: github.ref == 'refs/heads/release' || github.event.inputs.force_release == 'true'
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: release
